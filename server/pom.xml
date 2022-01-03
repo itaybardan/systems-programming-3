@@ -18,7 +18,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.2.1</version>
                 <configuration>
-                    <mainClass>bgu.spl.net.impl.BGSServer.TPCMain</mainClass>
+                    <mainClass>bgu.spl.net.impl.BGSServer.ReactorMain</mainClass>
 <!--                    <arguments>-->
 <!--                        <argument>src/main/resources/example_input.json</argument>-->
 <!--                    </arguments>-->
