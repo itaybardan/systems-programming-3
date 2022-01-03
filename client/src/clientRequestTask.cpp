@@ -3,7 +3,7 @@
 //
 
 #include <boost/algorithm/string.hpp>
-#include "ClientRequestTask.h"
+#include "../include/ClientRequestTask.h"
 
 /**
 * Default constructor.

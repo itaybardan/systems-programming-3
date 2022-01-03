@@ -6,10 +6,10 @@
 #include <iostream>
 #include <thread>
 #include <boost/thread.hpp>
-#include "ConnectionHandler.h"
+#include "../include/ConnectionHandler.h"
 #include <boost/algorithm/string.hpp>
-#include <ClientRequestTask.h>
-#include <ServerListenerTask.h>
+#include <../include/ClientRequestTask.h>
+#include <../include/ServerListenerTask.h>
 
 using namespace boost;
 using namespace std;

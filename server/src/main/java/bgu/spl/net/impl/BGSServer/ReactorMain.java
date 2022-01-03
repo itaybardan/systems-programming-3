@@ -19,7 +19,7 @@ public class ReactorMain {
         //creating and activating the Reactor Server
         Server<Message> reactorServer = Server.reactor(
                 Runtime.getRuntime().availableProcessors(),
-                7777, //port
+                9090, //port
                 () -> new BidiMessageProtocolImpl(dataManager,logOrSendLock,registerOrUserList),
                 BidiMessageEncoderDecoder::new);
 

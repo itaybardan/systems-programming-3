@@ -4,7 +4,7 @@
 // Created by tomer on 02/01/19.
 //
 
-#include <EncoderDecoder.h>
+#include <../include/EncoderDecoder.h>
 #include <boost/algorithm/string.hpp>
 #include <locale>
 

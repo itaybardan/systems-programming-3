@@ -17,7 +17,8 @@ public class TPCMain {
         ReadWriteLock logOrSendLock = new ReentrantReadWriteLock(true);
         ReadWriteLock registerOrUserList = new ReentrantReadWriteLock(true);
         //creating and activating the Tread-Per-Client Server
-        Server<Message> threadPerClientServer = Server.threadPerClient(Integer.parseInt(args[0]),
+        Server<Message> threadPerClientServer = Server.threadPerClient(
+                9090,
                 () -> new BidiMessageProtocolImpl(dataManager,logOrSendLock,registerOrUserList),
                 BidiMessageEncoderDecoder::new);
 
