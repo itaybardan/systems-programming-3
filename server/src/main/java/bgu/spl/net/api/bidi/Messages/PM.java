@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
  * Message Of type PM of Client-To-Server communication, when a user wants to send a private message to other user.
  */
 public class PM extends Message {
-
+    public static String[] forbiddenWords = new String[]{"fuck", "dinner"};
     //region Fields
     /**
      * String represents the username that needs to get this message.
@@ -38,6 +38,15 @@ public class PM extends Message {
     public String getContent() {
         return content;
     }
+
+    public String getFilteredContent() {
+        String content = this.content;
+        for (String word : PM.forbiddenWords) {
+            content = content.replace(word, "<filtered>");
+        }
+        return content;
+    }
+
     //endregion Getters
 
     /**

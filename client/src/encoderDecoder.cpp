@@ -33,6 +33,10 @@ void EncoderDecoder::init() {
     this->commandDictionary.insert(std::pair<string,short>("USERLIST",USERLIST));
     //Stat request = 8
     this->commandDictionary.insert(std::pair<string,short>("STAT",STAT));
+
+    // BLOCK request = 12
+    this->commandDictionary.insert(std::pair<string,short>("BLOCK",BLOCK));
+
     this->zeroDelimiter = '\0';
 }
 
@@ -99,6 +103,9 @@ vector<char> & EncoderDecoder::convertingToMessageByType(string &input, char *ch
         case USERLIST:
             output.push_back(ch_Opcode[0]);
             output.push_back(ch_Opcode[1]);
+            break;
+        case BLOCK:
+            blockToMessage(input, ch_Opcode, output);
             break;
         default:
             //stat case
@@ -221,6 +228,26 @@ void EncoderDecoder::postOrStatToMessage(std::string input, char *ch_Opcode, std
     //inserting:
     //1. the useranme if it's a Stat message
     //2. the content if it's a post
+    for (char i : input) {
+        output.push_back(i);
+    }
+    //adding the '\0' delimiter in the end of the message
+    output.push_back(this->zeroDelimiter);
+}
+
+/**
+ * Part of the StringToMessage function
+ * when the message is identified as a Block request -->
+ * @param input                 String represent the input that was entered by the user.
+ * @param ch_Opcode             char array represents the Opcode of this message.
+ * @return      Char Array that represents the final PM or Stat message
+ */
+void EncoderDecoder::blockToMessage(std::string input, char *ch_Opcode, std::vector<char> &output) {
+
+    //inserting the opcode to the array
+    output.push_back(ch_Opcode[0]);
+    output.push_back(ch_Opcode[1]);
+    //inserting the username
     for (char i : input) {
         output.push_back(i);
     }

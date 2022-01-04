@@ -23,11 +23,12 @@ enum Opcode{
     STAT = 8,
     NOTIFICATION = 9,
     ACK = 10,
-    ERROR = 11
+    ERROR = 11,
+    BLOCK = 12
 };
 
 /**
- * Class In Charge of Encoding messages to The server and Decodin messages from the server
+ * Class In Charge of Encoding messages to The server and Decoding messages from the server
  */
 class EncoderDecoder{
 
@@ -143,6 +144,7 @@ class EncoderDecoder{
          */
          void pmToMessage(std::string input, char *ch_Opcode, std::vector<char> &output);
 
+         void blockToMessage(std::string input, char *ch_Opcode, std::vector<char> &output);
         //endregion Encoding Functions
 
 };
