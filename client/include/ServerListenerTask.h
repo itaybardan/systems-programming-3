@@ -5,7 +5,7 @@
 #ifndef BOOST_ECHO_CLIENT_SERVERLISTENERTASK_H
 #define BOOST_ECHO_CLIENT_SERVERLISTENERTASK_H
 
-#include "ConnectionHandler.h"
+#include "connectionHandler.h"
 
 /**
  * Class represents a Task to run by the bgs client main:

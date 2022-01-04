@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <thread>
-#include <boost/thread.hpp>
-#include "../include/ConnectionHandler.h"
+
+#include "../include/connectionHandler.h"
 #include <boost/algorithm/string.hpp>
 #include <../include/ClientRequestTask.h>
 #include <../include/ServerListenerTask.h>
