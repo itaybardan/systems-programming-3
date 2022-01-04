@@ -28,7 +28,8 @@ public abstract class Message {
         STAT,
         NOTIFICATION,
         ACK,
-        ERROR;
+        ERROR,
+        BLOCK
 
         public short getCode(){
             if(this == Opcode.REGISTER){
@@ -60,6 +61,9 @@ public abstract class Message {
             }
             else if(this == Opcode.ACK){
                 return 10;
+            }
+            else if (this == Opcode.BLOCK) {
+                return 12;
             }
             else{
                 //error message
@@ -140,6 +144,9 @@ public abstract class Message {
         }
         else if(code == 11){
             return Opcode.ERROR;
+        }
+        else if (code == 12) {
+            return Opcode.BLOCK
         }
         else {
             return null;

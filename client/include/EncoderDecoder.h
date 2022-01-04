@@ -27,7 +27,7 @@ enum Opcode{
 };
 
 /**
- * Class In Charge of Encoding messages to The server and Decodin messages from the server
+ * Class In Charge of Encoding messages to The server and Decoding messages from the server
  */
 class EncoderDecoder{
 
