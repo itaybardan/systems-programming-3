@@ -1,5 +1,5 @@
 # Thanks to Job Varnish (https://spin.atomicobject.com/2016/08/26/makefile-c-projects/)
-TARGET_EXEC := client
+TARGET_EXEC := BGSClient
 
 BUILD_DIR := ./build
 SRC_DIRS := ./src
