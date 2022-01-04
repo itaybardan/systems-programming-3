@@ -16,29 +16,7 @@ EncoderDecoder::EncoderDecoder() : commandDictionary(), zeroDelimiter('\0')  {}
 /**
  * Initialising the delimiter, and the values of the Messages's opcodes
  */
-void EncoderDecoder::init() {
-    //Register request = 1
-    this->commandDictionary.insert(std::pair<string,short>("REGISTER",REGISTER));
-    //Login request = 2
-    this->commandDictionary.insert(std::pair<string,short>("LOGIN",LOGIN));
-    //Logout request = 3
-    this->commandDictionary.insert(std::pair<string,short>("LOGOUT",LOGOUT));
-    //Follow request = 4
-    this->commandDictionary.insert(std::pair<string,short>("FOLLOW",FOLLOW));
-    //Post request = 5
-    this->commandDictionary.insert(std::pair<string,short>("POST",POST));
-    //PM request = 6
-    this->commandDictionary.insert(std::pair<string,short>("PM",PM));
-    //UserList request = 7
-    this->commandDictionary.insert(std::pair<string,short>("USERLIST",USERLIST));
-    //Stat request = 8
-    this->commandDictionary.insert(std::pair<string,short>("STAT",STAT));
 
-    // BLOCK request = 12
-    this->commandDictionary.insert(std::pair<string,short>("BLOCK",BLOCK));
-
-    this->zeroDelimiter = '\0';
-}
 
     //region Encoding Functions
 
@@ -53,23 +31,7 @@ void EncoderDecoder::shortToBytes(short num, char bytesArr[]) {
 }
 
 
-/**
-* Convert the input string from the client to a char array to send to the server.
-* @param input         String represent the user input
-* @return              Char* represent a bytes array to send to the server to process
-*/
-std::vector<char> EncoderDecoder::stringToMessage(std::string input) {
-    char ch_Opcode[2];
-    std::vector<char> output;
-    // taking the first word of the sentence to process which kind of request it is from the user
-    std::string command = boost::to_upper_copy<std::string>(input.substr(0,input.find_first_of(" ")));
-    input = input.substr(input.find_first_of(" ") + 1);
-    //translating the first word to a Opcode using the commandDictionary.
-    short opcode = this->commandDictionary.at(command);
-    this->shortToBytes(opcode,ch_Opcode);
-    output = convertingToMessageByType(input, ch_Opcode, output, opcode);
-    return output;
-}
+
 /**
  * Part of the "stringToMessage" Function.
  * Decides how to convert the user input according to the opcode of the message
@@ -79,37 +41,38 @@ std::vector<char> EncoderDecoder::stringToMessage(std::string input) {
  * @param opcode            Short represent the opcode as a number
  * @return                  Vector of chars which represents the user input as a byte array to the server.
  */
+
+
 vector<char> & EncoderDecoder::convertingToMessageByType(string &input, char *ch_Opcode, vector<char> &output, short opcode) {
     switch (opcode) {
-        case REGISTER:
+        case 1:
             registerAndLoginToMessage(input, ch_Opcode, output);
             break;
-        case LOGIN:
+        case 2:
             registerAndLoginToMessage(input, ch_Opcode, output);
             break;
-        case LOGOUT:
+        case 3:
             output.push_back(ch_Opcode[0]);
             output.push_back(ch_Opcode[1]);
             break;
-        case FOLLOW:
-            followToMessage(input, ch_Opcode, output);
+        case 4:
+            followToMessage(input, output);
             break;
-        case POST:
+        case 5:
             postOrStatToMessage(input, ch_Opcode, output);
             break;
-        case PM:
+        case 6:
             pmToMessage(input, ch_Opcode, output);
             break;
-        case USERLIST:
+        case 7:
             output.push_back(ch_Opcode[0]);
             output.push_back(ch_Opcode[1]);
             break;
-        case BLOCK:
-            blockToMessage(input, ch_Opcode, output);
-            break;
-        default:
-            //stat case
+        case 8:
             postOrStatToMessage(input, ch_Opcode, output);
+            break;
+        case 12:
+            blockToMessage(input, ch_Opcode, output);
             break;
     }
     return output;
@@ -150,7 +113,7 @@ void EncoderDecoder::registerAndLoginToMessage(std::string input, char *ch_Opcod
  * @param ch_Opcode             char array represents the Opcode of this message.
  * @return      Char Array that represents the final follow message
  */
-void EncoderDecoder::followToMessage(std::string input, char *ch_Opcode, std::vector<char> &output) {
+void EncoderDecoder::followToMessage(std::string input, std::vector<char> &output) {
     char yesOrNo;
     //getting the "follow or not follow" from the string
     std::string followOrNot = input.substr(0,input.find_first_of(" "));
@@ -170,15 +133,22 @@ void EncoderDecoder::followToMessage(std::string input, char *ch_Opcode, std::ve
     this->shortToBytes(1,ch_numberOfUsers);
     //creating a vector to hold the usernames to search in the server
     std::vector<string> names;
-    int counter = 0;
-    while (counter<1){
-        //as long as there is still a user left to read --> adding it to the names vector
-        std::string current = input.substr(0,input.find_first_of(" "));
-        input = input.substr(input.find_first_of(" ") + 1);
-        names.push_back(current);
-        counter++;
+    std::string current = input.substr(0,input.find_first_of(" "));
+    input = input.substr(input.find_first_of(" ") + 1);
+    names.push_back(current);
+
+    output.push_back(yesOrNo);
+    output.push_back(ch_numberOfUsers[0]);
+    output.push_back(ch_numberOfUsers[1]);
+    for (auto &name : names) {
+        //for each name in the vector
+        for (char j : name) {
+            //inserting all the letters of the user
+            output.push_back(j);
+        }
+        //after each name --> putting the '|' delimiter.
+        output.push_back(zeroDelimiter);
     }
-    followInsertingDataToOutput(ch_Opcode, output, yesOrNo, ch_numberOfUsers, names);
 }
 
 /**
@@ -190,12 +160,8 @@ void EncoderDecoder::followToMessage(std::string input, char *ch_Opcode, std::ve
 * @param ch_numberOfUsers          Char Array that represents the number of user the client wants to follow \ unfollow
 * @param names                     Vector of strings represents the names to follow or unfollow
 */
-void EncoderDecoder::followInsertingDataToOutput(char *ch_Opcode, vector<char> &output, char yesOrNo, char *ch_numberOfUsers,
+void EncoderDecoder::followInsertingDataToOutput(vector<char> &output, char yesOrNo, char *ch_numberOfUsers,
                                             vector<string> &names) {
-
-    //inserting the opCode
-    output.push_back(ch_Opcode[0]);
-    output.push_back(ch_Opcode[1]);
     //inserting the yesOrNo char
     output.push_back(yesOrNo);
     output.push_back(ch_numberOfUsers[0]);

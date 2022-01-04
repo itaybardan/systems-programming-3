@@ -1,7 +1,3 @@
-//
-// Created by tomer on 02/01/19.
-//
-
 #ifndef BOOST_ECHO_CLIENT_ENCODERDECODER_H
 #define BOOST_ECHO_CLIENT_ENCODERDECODER_H
 
@@ -109,21 +105,19 @@ class EncoderDecoder{
          * Part of the StringToMessage function
          * when the message is identified as a follow request --> processing the rest of the string by the user as a Follow Message Type.
          * @param input                 String represent the input that was entered by the user.
-         * @param ch_Opcode             char array represents the Opcode of this message.
          * @return      Char Array that represents the final follow message
          */
-        void followToMessage(std::string input, char *ch_Opcode, std::vector<char> &output);
+        void followToMessage(std::string input, std::vector<char> &output);
 
         /**
          * Part of the "followToMessage" Function
          * Inserting all the encoded data to the output vector.
-         * @param ch_Opcode                 Char Array that represents the opcode of the follow message
          * @param output                    Vector of chars represents the vector to send to the server as array
          * @param yesOrNo                   Char represent whether the user wants to follow someone or not
          * @param ch_numberOfUsers          Char Array that represents the number of user the client wants to follow \ unfollow
          * @param names                     Vector of strings represents the names to follow or unfollow
          */
-        void followInsertingDataToOutput(char *ch_Opcode, std::vector<char> &output, char yesOrNo, char *ch_numberOfUsers,
+        void followInsertingDataToOutput(std::vector<char> &output, char yesOrNo, char *ch_numberOfUsers,
                                      std::vector<std::string> &names);
 
         /**

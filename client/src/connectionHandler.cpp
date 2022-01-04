@@ -1,5 +1,6 @@
 #include <../include/connectionHandler.h>
- 
+
+
 using boost::asio::ip::tcp;
 
 using std::cin;
@@ -13,10 +14,7 @@ using std::vector;
  * Default constructor
  */
 ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(),
-socket_(io_service_),endDec(),currentLogoutStatus(PENDING){
-    //initialising the values of the encoder decoder
-    this->endDec.init();
-}
+socket_(io_service_){}
 /**
 * Default destructor
 */
@@ -40,26 +38,47 @@ bool ConnectionHandler::connect() {
     }
     return true;
 }
-//region Getters&Setters
 
-/**
- * Return the current logout status
- * @return      LogoutStatus Enum represents whether the communication with the server is still going, pending, or terminated
- */
-LogoutStatus ConnectionHandler::getLogoutStatus() {
-    return this->currentLogoutStatus;
+short bytesToShort(char *bytesArr) {
+    short result = (short)((bytesArr[0] & 0xff) << 8);
+    result += (short)(bytesArr[1] & 0xff);
+    return result;
 }
 
-/**
- * Setting the logoutStatus of this ConnectionHandler
- * @param newStatus             LogoutStatus enum to set
- */
-void ConnectionHandler::setLogoutStatus(LogoutStatus newStatus) {
-    this->currentLogoutStatus = newStatus;
+void shortToBytes(short num, char *bytesArr) {
+    bytesArr[0] = ((num >> 8) & 0xFF);
+    bytesArr[1] = (num & 0xFF);
+}
+short getOpCode(string inputType) {
+    short opcode=11;
+    if(inputType == "REGISTER") opcode=1;
+    else if(inputType == "LOGIN") opcode=2;
+    else if(inputType == "LOGOUT") opcode=3;
+    else if(inputType == "FOLLOW") opcode=4;
+    else if(inputType == "POST") opcode=5;
+    else if(inputType == "PM") opcode=6;
+    else if(inputType == "LOGSTAT") opcode=7;
+    else if(inputType == "STAT") opcode=8;
+    else if(inputType == "BLOCK") opcode=12;
+
+    return opcode;
 }
 
-//endregion Getters&Setters
- 
+std::vector<char> stringToMessage(std::string input) {
+    char ch_Opcode[2];
+    std::vector<char> output;
+
+    std::string lineType = input.substr(0,input.find_first_of(" "));
+    input = input.substr(input.find_first_of(" ") + 1);
+
+    short opcode = getOpCode(lineType);
+    shortToBytes(opcode,ch_Opcode);
+    //output = convertingToMessageByType(input, ch_Opcode, output, opcode); TODO change
+    return output;
+}
+
+
+
 bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
     size_t tmp = 0;
 	boost::system::error_code error;
@@ -93,6 +112,54 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
     return true;
 }
 
+bool ConnectionHandler::getLine(std::string& line) {
+    return getFrameAscii(line, ';');
+}
+
+bool ConnectionHandler::sendLine(std::string& line) { //TODO CHANGE JAVA CODE TO ACCOMMODATE THE DELIMITER (';') CORRECTLY
+    return sendFrameAscii(line, '\0');
+}
+
+void encodeMessage(std::string &message, short opcode){
+    switch(opcode){
+        case(1): std::replace(message.begin(), message.end() , ' ', '\0');
+            break;
+        case(2): std::replace(message.begin(), message.end() , ' ', '\0');
+            break;
+        case(3): message.clear();
+            break;
+        case(4): std::replace(message.begin(), message.end() , ' ', '\0');
+            break;
+        case(6): {
+            std::replace(message.begin(), message.end(), ' ', '\0');
+            break;
+        }
+        case(7): message.clear();
+            break;
+        case(8): std::replace(message.begin(), message.end() , ' ', '|');
+            break;
+        case(12): std::replace(message.begin(), message.end(), ' ', '\0');
+            break;
+    }
+}
+
+bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
+    short opcode = getOpCode(frame.substr(0,frame.find_first_of(" ")));
+    char* opCodeToByte = new char[2];
+
+    frame = frame.substr(frame.find_first_of(" ") + 1); //we removed the code type from the line
+    encodeMessage(frame, opcode);
+
+    shortToBytes(opcode, opCodeToByte);
+    bool result1= sendBytes(opCodeToByte, 2);
+    delete[] opCodeToByte;
+    if(!result1) return false;
+    bool result2=sendBytes(frame.c_str(),frame.length());
+    if(!result2) return false;
+
+    return sendBytes(&delimiter,1);
+}
+
 bool ConnectionHandler::getFrameAscii(std::string& frame, char delimiter) {
     char ch;
     // Stop when we encounter the null character.
@@ -109,6 +176,15 @@ bool ConnectionHandler::getFrameAscii(std::string& frame, char delimiter) {
     return true;
 }
 
+void ConnectionHandler::close() {
+    try{
+        socket_.close();
+    } catch (...) {
+        std::cout << "closing failed: connection already closed" << std::endl;
+    }
+}
+
+
 //region translating message from server functions
 /**
  * Translating the incoming message from the server to string
@@ -124,7 +200,7 @@ std::string ConnectionHandler::translateMessage() {
         message.push_back(ch);
     }
     char ch_tempArray[2] = {message[0],message[1]};
-    short opcode = this->endDec.bytesToShort(ch_tempArray);
+    short opcode = bytesToShort(ch_tempArray);
     //opcode could be of a ACK , ERROR or Notification
     if(opcode == ACK){
         return translatingAckMessage(output, ch, message, ch_tempArray, opcode);
@@ -157,7 +233,7 @@ string ConnectionHandler::translatingAckMessage(string &output, char &ch, vector
     //getting resolved opcode
     ch_tempArray[0] = message[2];
     ch_tempArray[1] = message[3];
-    opcode = endDec.bytesToShort(ch_tempArray);
+    opcode = bytesToShort(ch_tempArray);
     if(opcode == FOLLOW || opcode == USERLIST){
         translateACKFollowOrUserList(output, ch, message, ch_tempArray, opcode);
         return output;
@@ -190,7 +266,7 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
     }
     ch_tempArray[0] = message[4];
     ch_tempArray[1] = message[5];
-    output.append(std::to_string(endDec.bytesToShort(ch_tempArray)));
+    output.append(std::to_string(bytesToShort(ch_tempArray)));
     output.append(" ");
     //getting the next two bytes --> number of followers
     for(int i = 0; i < 2; i++){
@@ -199,7 +275,7 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
     }
     ch_tempArray[0] = message[6];
     ch_tempArray[1] = message[7];
-    output.append(std::to_string(endDec.bytesToShort(ch_tempArray)));
+    output.append(std::to_string(bytesToShort(ch_tempArray)));
     output.append(" ");
     //getting the next two bytes --> number of following
     for(int i = 0; i < 2; i++){
@@ -208,7 +284,7 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
     }
     ch_tempArray[0] = message[8];
     ch_tempArray[1] = message[9];
-    output.append(std::to_string(endDec.bytesToShort(ch_tempArray)));
+    output.append(std::to_string(bytesToShort(ch_tempArray)));
     return output;
 }
 
@@ -240,7 +316,7 @@ void ConnectionHandler::translateACKFollowOrUserList(string &output, char &ch, v
     }
     ch_tempArray[0] = message[4];
     ch_tempArray[1] = message[5];
-    short numberOfUsers = endDec.bytesToShort(ch_tempArray);
+    short numberOfUsers = bytesToShort(ch_tempArray);
     //adding number of users
     output.append(std::to_string(numberOfUsers));
     //getting all the users
@@ -286,7 +362,7 @@ string ConnectionHandler::translatingErrorMessage(string &output, char &ch, vect
     //getting resolved opcode
     ch_tempArray[0] = message[2];
     ch_tempArray[1] = message[3];
-    opcode = endDec.bytesToShort(ch_tempArray);
+    opcode = bytesToShort(ch_tempArray);
     output.append(std::to_string(opcode));
     return output;
 }
@@ -317,31 +393,17 @@ string ConnectionHandler::translatingNotificationMessage(string &output, char &c
 //endregion Translate Message From Server Functions
 
 
-/**
- * Send the user request to the server, as bytes array according to server protocol
- * @param userInput                     String represent the user input
- * @return              true if the message was sent successfully , false otherwise.
- */
-bool ConnectionHandler::sendUserInput(std::string userInput){
-    std::vector<char> toConvert = this->endDec.stringToMessage(userInput);
-    toConvert.shrink_to_fit();
-    char toSend[toConvert.size()];
-    for(unsigned long i = 0 ; i <toConvert.size(); i++){
-        toSend[i] = toConvert[i];
-    }
-    return sendBytes(toSend, (int)toConvert.size());
-}
+
+
+
+
+
+
+
 
 
  
-// Close down the connection properly.
-void ConnectionHandler::close() {
-    try{
-        socket_.close();
-    } catch (...) {
-        std::cout << "closing failed: connection already closed" << std::endl;
-    }
-}
+
 
 
 
