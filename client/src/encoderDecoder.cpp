@@ -157,14 +157,14 @@ void EncoderDecoder::followToMessage(std::string input, char *ch_Opcode, std::ve
         yesOrNo = 1;
     }
     //taking the number of users in the list from the user input
-    short numberOfUsers = (short)std::stoi(input.substr(0,input.find_first_of(" ")));
-    input = input.substr(input.find_first_of(" ") + 1);
+    //short numberOfUsers = (short)std::stoi(input.substr(0,input.find_first_of(" ")));
+    //input = input.substr(input.find_first_of(" ") + 1);
     char ch_numberOfUsers[2];
-    this->shortToBytes(numberOfUsers,ch_numberOfUsers);
+    this->shortToBytes(1,ch_numberOfUsers);
     //creating a vector to hold the usernames to search in the server
     std::vector<string> names;
     int counter = 0;
-    while (counter<numberOfUsers){
+    while (counter<1){
         //as long as there is still a user left to read --> adding it to the names vector
         std::string current = input.substr(0,input.find_first_of(" "));
         input = input.substr(input.find_first_of(" ") + 1);
