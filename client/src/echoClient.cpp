@@ -1,7 +1,3 @@
-//
-// Created by tomer on 01/01/19.
-//
-
 #include <stdlib.h>
 #include <iostream>
 #include <thread>

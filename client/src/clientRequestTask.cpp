@@ -1,7 +1,3 @@
-//
-// Created by tomergon@wincs.cs.bgu.ac.il on 1/5/19.
-//
-
 #include <boost/algorithm/string.hpp>
 #include "../include/ClientRequestTask.h"
 
