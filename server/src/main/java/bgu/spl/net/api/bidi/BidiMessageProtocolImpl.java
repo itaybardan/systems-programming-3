@@ -11,20 +11,17 @@ import java.util.concurrent.locks.ReadWriteLock;
 public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
 
     /**
+     * DataManager Represents the shared data object.
+     */
+    private final DataManager dataManager;
+    /**
      * Boolean represents if the connection should terminate.
      */
     private boolean shouldTerminate;
-
     /**
      * Connections<Message> Represents the set of connections (connectionHandlers) currently connected.
      */
     private Connections<Message> connections;
-
-    /**
-     * DataManager Represents the shared data object.
-     */
-    private final DataManager dataManager;
-
     /**
      * Represents a read and write locks. Login and Logout are write locks, Post and PM are read lock.
      */
@@ -254,7 +251,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         this.logOrSendLock.readLock().lock(); // PM is considered as a read event.
         User sender = this.dataManager.getConnectedUser(this.connectionID);
         User recipient = this.dataManager.getUserByName(pmMsg.getUserName());
-        if ((sender == null) || (recipient == null)) {
+        if ((sender == null) || (recipient == null) || sender.getBlockedBy().contains(recipient)) {
             //the user is not logged in or recipient is not registered --> send error message
             this.connections.send(this.connectionID, new Error(pmMsg.getOpcode()));
         } else {
@@ -281,7 +278,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         if (user == null) {
             this.connections.send(this.connectionID, new Error(userListMsg.getOpcode()));
         } else {
-            List<String> registeredUsers = this.dataManager.returnRegisteredUsers();
+            List<String> registeredUsers = this.dataManager.returnRegisteredUsers(user);
             Message toSend = userListMsg.generateAckMessage((short) registeredUsers.size(), registeredUsers);
             this.connections.send(this.connectionID, toSend);
         }
@@ -297,7 +294,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
     private void statFunction(Stat statMsg) {
         User currentClient = this.dataManager.getConnectedUser(this.connectionID);
         User user = this.dataManager.getUserByName(statMsg.getUsername());
-        if ((user == null) || (currentClient == null)) {
+        if ((user == null) || (currentClient == null) || currentClient.getBlockedBy().contains(user)) {
             //if the requesting user is not logged in OR if the user in the request does not exist --> send error
             this.connections.send(this.connectionID, new Error(statMsg.getOpcode()));
         } else {
@@ -316,8 +313,14 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             //if the requesting user is not logged in OR if the user in the request does not exist --> send error
             this.connections.send(this.connectionID, new Error(blockMsg.getOpcode()));
         } else {
-            // block logic is here
+            user.addBlockedBy(currentClient);
+            // blocking and blocked users should unfollow each other
+            if (currentClient.getFollowers().contains(user))
+                currentClient.removeFollower(user);
+            if (user.getFollowers().contains(currentClient))
+                user.removeFollower(currentClient);
 
+            user.addBlockedBy(currentClient);
             this.connections.send(this.connectionID, blockMsg.generateAckMessage());
         }
     }

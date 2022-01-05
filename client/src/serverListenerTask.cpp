@@ -9,21 +9,21 @@
  * Default constructor.
  * @param connectionHandler        Connection Handler to receive messages from the server to this client.
  */
-ServerListenerTask::ServerListenerTask(ConnectionHandler* connectionHandler):ch(connectionHandler){}
+ServerListenerTask::ServerListenerTask(ConnectionHandler *connectionHandler) : ch(connectionHandler) {}
+
 /**
 * Run method to run in a separate thread, that will read incoming messages from the server,
 * as long as the client is connected to the server.
 */
 void ServerListenerTask::run() {
-    while(true){
+    while (true) {
         std::string answer = ch->translateMessage();
         std::cout << answer << std::endl;
         if (answer == "ACK 3") { //TODO change to ACK LOGOUT
             //if the log out was successful --> tell the "Client Request Task" thread to terminate, and break from the loop
             this->ch->setLogoutStatus(TERMINATE);
             break;
-        }
-        else if(answer == "ERROR 3"){ //
+        } else if (answer == "ERROR 3") { //
             //if the logout didn't succeeded --> tell the "Client Request Task" thread to continue working.
             this->ch->setLogoutStatus(PROCEED);
         }

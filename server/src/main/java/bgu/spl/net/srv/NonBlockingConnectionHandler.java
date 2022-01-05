@@ -1,7 +1,6 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
@@ -25,7 +24,6 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
     private final Reactor reactor;
 
 
-
     public NonBlockingConnectionHandler(
             MessageEncoderDecoder<T> reader,
             BidiMessagingProtocol<T> protocol,
@@ -35,6 +33,20 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
         this.encdec = reader;
         this.protocol = protocol;
         this.reactor = reactor;
+    }
+
+    private static ByteBuffer leaseBuffer() {
+        ByteBuffer buff = BUFFER_POOL.poll();
+        if (buff == null) {
+            return ByteBuffer.allocateDirect(BUFFER_ALLOCATION_SIZE);
+        }
+
+        buff.clear();
+        return buff;
+    }
+
+    private static void releaseBuffer(ByteBuffer buff) {
+        BUFFER_POOL.add(buff);
     }
 
     public Runnable continueRead() {
@@ -103,33 +115,20 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
         }
     }
 
-    private static ByteBuffer leaseBuffer() {
-        ByteBuffer buff = BUFFER_POOL.poll();
-        if (buff == null) {
-            return ByteBuffer.allocateDirect(BUFFER_ALLOCATION_SIZE);
-        }
-
-        buff.clear();
-        return buff;
-    }
-
-    private static void releaseBuffer(ByteBuffer buff) {
-        BUFFER_POOL.add(buff);
-    }
-
-
     /**
      * initialising the protocol of this connection Handler with the connection object and this ConnectionHandler unique id.
-     * @param connectionID              Integer represents this ConnectionHandler unique id in the connections objects.
-     * @param connections               Connections Object to reference to the protocol of this ConnectionHandler.
+     *
+     * @param connectionID Integer represents this ConnectionHandler unique id in the connections objects.
+     * @param connections  Connections Object to reference to the protocol of this ConnectionHandler.
      */
-    public void start(Connections<T> connections, int connectionID){
-        protocol.start(connectionID,connections);
+    public void start(Connections<T> connections, int connectionID) {
+        protocol.start(connectionID, connections);
     }
 
     /**
      * Send the given Message to the Client that connected to this Connection Handler.
-     * @param msg           T object to send to the client.
+     *
+     * @param msg T object to send to the client.
      */
     @Override
     public void send(T msg) {

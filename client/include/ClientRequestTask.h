@@ -6,6 +6,7 @@
 #define BOOST_ECHO_CLIENT_CLIENTREQUESTTASK_H
 
 #include "connectionHandler.h"
+
 /**
  * Class represents a Task to run by the bgs client main:
  * This task is sending the user request input from the keyboard to the server.
@@ -22,6 +23,7 @@ public:
      * @param connectionHandler     ConnectionHandler to handler user requests.
      */
     ClientRequestTask(ConnectionHandler *connectionHandler);
+
     /**
      * Run method to run in a separate thread, that will read user input from the keyboard and send it to the server,
      * as long as the client is connected to the server.

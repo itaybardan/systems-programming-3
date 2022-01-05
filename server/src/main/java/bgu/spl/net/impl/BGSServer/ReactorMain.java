@@ -20,7 +20,7 @@ public class ReactorMain {
         Server<Message> reactorServer = Server.reactor(
                 Runtime.getRuntime().availableProcessors(),
                 9090, //port
-                () -> new BidiMessageProtocolImpl(dataManager,logOrSendLock,registerOrUserList),
+                () -> new BidiMessageProtocolImpl(dataManager, logOrSendLock, registerOrUserList),
                 BidiMessageEncoderDecoder::new);
 
         reactorServer.serve();

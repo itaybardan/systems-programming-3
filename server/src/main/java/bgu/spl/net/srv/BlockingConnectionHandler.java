@@ -4,6 +4,7 @@ import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -46,14 +47,15 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     /**
      * Sends the given message to the client that is connected to this Connections handler
-     * @param msg       T object to send back to the client.
+     *
+     * @param msg T object to send back to the client.
      */
     @Override
     public void send(T msg) {
-        try{
-        out.write(encdec.encode(msg));
-        out.flush();
-        }catch (IOException ignored){
+        try {
+            out.write(encdec.encode(msg));
+            out.flush();
+        } catch (IOException ignored) {
 
         }
     }
@@ -66,10 +68,11 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     /**
      * initialising the protocol of this connection Handler with the connection object and this ConnectionHandler unique id.
-     * @param connectionID              Integer represents this ConnectionHandler unique id in the connections objects.
-     * @param connections               Connections Object to reference to the protocol of this ConnectionHandler.
+     *
+     * @param connectionID Integer represents this ConnectionHandler unique id in the connections objects.
+     * @param connections  Connections Object to reference to the protocol of this ConnectionHandler.
      */
-    public void start(int connectionID, Connections<T> connections){
+    public void start(int connectionID, Connections<T> connections) {
         this.protocol.start(connectionID, connections);
     }
 }
