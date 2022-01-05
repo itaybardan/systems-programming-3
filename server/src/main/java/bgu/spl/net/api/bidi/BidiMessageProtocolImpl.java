@@ -254,6 +254,8 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         if ((sender == null) || (recipient == null) || sender.getBlockedBy().contains(recipient)) {
             //the user is not logged in or recipient is not registered --> send error message
             this.connections.send(this.connectionID, new Error(pmMsg.getOpcode()));
+            this.logOrSendLock.readLock().unlock();
+            return;
         } else {
             Notification toSend = new Notification((byte) 0, sender.getUserName(), pmMsg.getFilteredContent());
             if (recipient.isConnected()) {
