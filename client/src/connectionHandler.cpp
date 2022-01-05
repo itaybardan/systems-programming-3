@@ -141,7 +141,6 @@ bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
     if(!result1) return false;
 
     if(opcode == 4) {
-        std::cout << "follwo case " << frame << std:: endl;
         opCodeToByte[0] = frame[0];
         bool result1v2 = sendBytes(opCodeToByte, 1);
         if(!result1v2) return false;
