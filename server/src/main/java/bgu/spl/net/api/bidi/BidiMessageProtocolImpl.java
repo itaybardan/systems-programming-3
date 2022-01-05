@@ -171,13 +171,12 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         if (toCheck == null) {
             this.connections.send(this.connectionID, new Error(followMsg.getOpcode()));
         } else {
-            List<String> successful = this.dataManager.followOrUnfollow(toCheck, followMsg.getUsers(), followMsg.isFollowing());
-            if (successful.isEmpty()) {
+            Boolean successful = this.dataManager.followOrUnfollow(toCheck, followMsg.getUser(), followMsg.isFollowing());
+            if (!successful) {
                 //If no one of the requested users were followed \ unfollowed successfully --> send error.
                 this.connections.send(this.connectionID, new Error(followMsg.getOpcode()));
             } else {
-                short amount = (short) successful.size();
-                this.connections.send(this.connectionID, followMsg.generateAckMessage(amount, successful));
+                this.connections.send(this.connectionID, followMsg.generateAckMessage(followMsg.getUser()));
             }
         }
     }

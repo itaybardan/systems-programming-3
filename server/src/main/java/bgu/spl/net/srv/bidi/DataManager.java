@@ -158,45 +158,39 @@ public class DataManager {
     }
 
     /**
-     * Editing a given user to Follow or Unfollow a collection of users according to the given parameters.
+     * Will follow/unfollow the requested user if the request, returns boolean value of whether the procedure was successful.
      *
      * @param toCheck User Object to edit his Follow and Unfollow List.
-     * @param users   List of String represents UserNames  to follow or unfollow.
+     * @param user   List of String represents UserNames  to follow or unfollow.
      * @param follow  Boolean represents whether to follow or unfollow the users in the list.
-     * @return List of String represents all the users which was successfully followed or unfollowed
+     * @return whether this user exists | the follow/unfollow method could be resolved successfully.
      */
-    public List<String> followOrUnfollow(User toCheck, List<String> users, boolean follow) {
-        List<String> successful = new Vector<>();
+    public Boolean followOrUnfollow(User toCheck, String user, boolean follow) {
+        User current = this.namesToRegisteredUsers.get(user);
+        if(current == null) return false;
+
         if (follow) {
-            //if it was a follow request
-            for (String currentUser : users) {
-                //for each name in the given list
-                User current = this.namesToRegisteredUsers.get(currentUser);
-                if (current != null) {
+
                     //if the wanted user is registered
                     //updated the toCheck User following database
                     if (!toCheck.getFollowing().contains(current) && !toCheck.getBlockedBy().contains(current)) {
                         toCheck.addFollowing(current);
                         current.addFollower(toCheck);
-                        successful.add(currentUser);
+                        return true;
                     }
-                }
-            }
-        } else {
+
+        }
+        else {
             //unfollow
-            for (String currentUser : users) {
-                User current = this.namesToRegisteredUsers.get(currentUser);
-                if (current != null) {
+
                     if (toCheck.getFollowing().contains(current)) {
                         toCheck.removeFollowing(current);
                         current.removeFollower(toCheck);
-                        successful.add(currentUser);
+                        return true;
                     }
 
-                }
-            }
         }
-        return successful;
+        return false;
     }
 
     /**

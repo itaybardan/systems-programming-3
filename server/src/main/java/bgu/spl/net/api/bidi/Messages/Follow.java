@@ -14,24 +14,20 @@ public class Follow extends Message {
      * Boolean represents whether the Request is for following or unfollowing
      */
     private boolean isFollowing;
-    /**
-     * Short number represent the number of users in the Follow request
-     */
-    private short numberOfUsers;
+
     /**
      * List of String of users that the client want to follow or unfollow
      */
-    private List<String> users;
-    //endregion Fields
+    private String user;
 
     /**
      * Default constructor
      *
      * @param isFollowing   Byte represents whether the client wants to follow or unfollow.
-     * @param numberOfUsers Short number represents the number of users in the follow request.
-     * @param users         List of String represents the users the client wants to follow or unfollow.
+
+     * @param user         List of String represents the users the client wants to follow or unfollow.
      */
-    public Follow(byte isFollowing, short numberOfUsers, List<String> users) {
+    public Follow(byte isFollowing, String user) {
         this.opcode = Opcode.FOLLOW;
         if (isFollowing == '\0') {
             //if the given byte is 0 --> follow
@@ -40,8 +36,8 @@ public class Follow extends Message {
             //else --> unfollow
             this.isFollowing = false;
         }
-        this.numberOfUsers = numberOfUsers;
-        this.users = users;
+
+        this.user = user;
 
     }
 
@@ -50,12 +46,8 @@ public class Follow extends Message {
         return isFollowing;
     }
 
-    public short getNumberOfUsers() {
-        return numberOfUsers;
-    }
-
-    public List<String> getUsers() {
-        return users;
+    public String getUser() {
+        return user;
     }
     //endregion Getters
 
@@ -66,64 +58,48 @@ public class Follow extends Message {
      */
     @Override
     public byte[] convertMessageToBytes() {
+
         byte[] opcode = this.shortToBytes(this.opcode.getCode());
         byte[] isFollowingBytes = new byte[1];
-        if (isFollowing) {
-            //if the user requested to follow --> return 0 byte
-            isFollowingBytes[0] = '\0';
-        } else {
-            //else --> return 1 byte.
+        if (!isFollowing) {
             isFollowingBytes[0] = 1;
         }
-        //converting the number of users to bytes array
-        byte[] numberOfUsersBytes = this.shortToBytes((short) this.numberOfUsers);
-        Vector<byte[]> usersNames = new Vector<>();
-        int totalBytesOfUsers = 0;
-        // converting each username to a byte array.
-        for (String currentName : this.users) {
-            byte[] currentNameArr = currentName.getBytes(StandardCharsets.UTF_8);
-            usersNames.add(currentNameArr);
-            totalBytesOfUsers += currentNameArr.length;
-        }
+
+        byte[] userInByte = user.getBytes(StandardCharsets.UTF_8);
+        int userInByteLength = userInByte.length;
+
         byte[] output = new byte[opcode.length + isFollowingBytes.length +
-                numberOfUsersBytes.length + totalBytesOfUsers + this.numberOfUsers];
+                + userInByteLength];
         int index = 0;
+
         //inserting all the data to single byte array to return.
         index = insertArray(opcode, output, index);
         index = insertArray(isFollowingBytes, output, index);
-        index = insertArray(numberOfUsersBytes, output, index);
-        for (byte[] currentUser : usersNames) {
-            index = insertArray(currentUser, output, index);
-            output[index] = '\0';
-            index++;
-        }
+        index = insertArray(userInByte, output, index);
+        output[index] = '\0';
+
         return output;
     }
 
     /**
      * Generate matching Ack Message to this Follow Message Message according the Message data and server protocol.
      *
-     * @param numberOfUsers Short number represents the amount of users in the given list
-     * @param users         List of Strings represents the users that were found by the server
+
+     * @param user String represents the user that was found by the server
      * @return Ack message matching this Follow Message data of this message according to the server protocol.
      */
-    public Ack generateAckMessage(short numberOfUsers, List<String> users) {
+    public Ack generateAckMessage(String user) {
 
-        //converting the number of users to bytes array
-        byte[] numberOfUsersBytes = this.shortToBytes(numberOfUsers);
-        byte[][] elements = new byte[1 + (numberOfUsers * 2)][];
-        int index = 0;
-        elements[index] = numberOfUsersBytes;
-        index++;
-        for (String currentUser : users) {
-            //converting each name in the list to bytes array and add it to the elements array.
-            byte[] toInsert = currentUser.getBytes(StandardCharsets.UTF_8);
-            elements[index] = toInsert;
-            index++;
-            byte[] separator = {'\0'};
-            elements[index] = separator;
-            index++;
-        }
+        byte[][] elements = new byte[3][];
+        elements[0] = new byte[2];
+        if(isFollowing) elements[0][0]='0';
+        else elements[0][0]='1';
+        elements[0][1]=' ';
+        byte[] toInsert = user.getBytes(StandardCharsets.UTF_8);
+        elements[1] = toInsert;
+        byte[] separator = {'\0'};
+        elements[2] = separator;
+
         Ack output = new Ack(this.opcode, elements);
         return output;
     }

@@ -77,10 +77,10 @@ public:
      * @param ch                    Char to read each byte
      * @param message               Vector of chars represents the message that was recieved from the server
      * @param ch_tempArray          Char array used to convert chars to short number
-     * @param opcode                Short represent the opcode of the recived message
      */
-    void translateACKFollowOrLogstat(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray,
-                                     short opcode);
+    void translateAckLogstat(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+
+    std::string translateAckFollow(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
 
     /**
      * Part Of the "translatingAckMessage".
@@ -126,6 +126,14 @@ public:
     std::string translatingErrorMessage(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
 
     //endregion Translate Message From Server Functions
+
+    void encodeMessage(std::string &message, short opcode);
+
+    short getOpCode(std::string inputType);
+
+    void shortToBytes(short num, char *bytesArr);
+
+    short bytesToShort(char *bytesArr);
 
 };
  

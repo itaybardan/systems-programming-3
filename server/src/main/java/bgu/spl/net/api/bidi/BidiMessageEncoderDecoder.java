@@ -233,34 +233,22 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
      * @return Message represents the decoded message, or null if not done reading the message.
      */
     private Message readingFollowMessage(byte nextByte) {
-        //field1 = numberOfUsers  | field2 = usernameList | followbyte = follow \ unfollow | zerocounter = bytesCounter
+        //field1 = null  | field2 = usernameList | followbyte = follow \ unfollow | zerocounter = bytesCounter
         if (this.zeroCounter == 0) {
-            this.field1 = new byte[2];
             this.followByte = nextByte;
             this.zeroCounter++;
             return null;
-        } else if ((this.zeroCounter > 0) && (this.zeroCounter < 3)) {
-            //The amount of bytes that were read is 1 or 2 which means (according to the assignment notifications)
-            // the next bytes are the number of users.
-            insertToNumberOfUsers(nextByte);
-            return null;
-        } else {
-            short numberOfUsers = Message.bytesToShort(this.field1);
+        }
+        else {
             insertByteToField2(nextByte);
             if (nextByte == '\0') {
-                // The current username ended.
-                this.zeroCounter++;
-                //to reduce the first three bytes of the follow \ unfollow and numberOfUsers bytes
-                if (this.zeroCounter - 3 == numberOfUsers) {
-                    return generateFollowMessage(numberOfUsers);
-                } else {
+                    return generateFollowMessage();
+                }
+            else {
                     return null;
                 }
-            } else {
-                return null;
             }
         }
-    }
 
     private Message readingBlockMessage(byte nextByte) {
         // field1 = username
@@ -277,43 +265,19 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         return output;
     }
 
-    /**
-     * Inserts the next byte (which represents the number of users) to field1 in place 0 or 1 according to the amount
-     * of bytes that were read.
-     *
-     * @param nextByte Represents the byte that needs to be inserted.
-     */
-    private void insertToNumberOfUsers(byte nextByte) {
-        if (this.zeroCounter == 1) {
-            this.field1[0] = nextByte;
-            this.zeroCounter++;
-        } else {
-            this.field1[1] = nextByte;
-            this.zeroCounter++;
-        }
-    }
+
 
     /**
      * Generating "Follow" message, by translating the arrays of bytes to strings.
      *
-     * @param numberOfUsers Represents the number of users.
      * @return Message which is a Follow message.
      */
-    private Message generateFollowMessage(int numberOfUsers) {
+    private Message generateFollowMessage() {
         Message output;//collected all the necessary users --> convert them to string and generate a FollowMessage
         checkReduceField2();
-        Vector<String> allUsers = new Vector<>();
-        int start = 0;
-        for (int i = 0; i < field2Index; i++) {
-            if (field2[i] == '\0') {
-                //finished a single user;
-                byte[] userByte = Arrays.copyOfRange(field2, start, i);
-                String user = new String(userByte, StandardCharsets.UTF_8);
-                allUsers.add(user);
-                start = i + 1;
-            }
-        }
-        output = new Follow(this.followByte, (short) numberOfUsers, allUsers);
+
+        byte[] userByte = Arrays.copyOfRange(field2, 0, field2Index-1);
+        output = new Follow(this.followByte, new String(userByte, StandardCharsets.UTF_8));
         generalVariablesReset();
         return output;
     }

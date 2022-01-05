@@ -39,17 +39,17 @@ bool ConnectionHandler::connect() {
     return true;
 }
 
-short bytesToShort(char *bytesArr) {
+short ConnectionHandler::bytesToShort(char *bytesArr) {
     short result = (short)((bytesArr[0] & 0xff) << 8);
     result += (short)(bytesArr[1] & 0xff);
     return result;
 }
 
-void shortToBytes(short num, char *bytesArr) {
+void ConnectionHandler::shortToBytes(short num, char *bytesArr) {
     bytesArr[0] = ((num >> 8) & 0xFF);
     bytesArr[1] = (num & 0xFF);
 }
-short getOpCode(string inputType) {
+short ConnectionHandler::getOpCode(string inputType) {
     short opcode=11;
     if(inputType == "REGISTER") opcode=1;
     else if(inputType == "LOGIN") opcode=2;
@@ -105,7 +105,7 @@ bool ConnectionHandler::sendLine(std::string& line) { //TODO CHANGE JAVA CODE TO
     return sendFrameAscii(line, '\0');
 }
 
-void encodeMessage(std::string &message, short opcode){
+void ConnectionHandler::encodeMessage(std::string &message, short opcode){
     switch(opcode){
         case(1): std::replace(message.begin(), message.end() , ' ', '\0');
             break;
@@ -144,20 +144,10 @@ bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
 
 
     if(opcode == 4) {
-        opCodeToByte = new char[2];
-        char* follow = new char[3];
-
-        std::cout << frame[0] << std::endl;
+        char* follow = new char[1];
         if(frame[0] == '0') follow[0] = 0;
         else follow[0] = 1;
-
-        std::cout << follow[0] << std::endl;
-
-        shortToBytes(1,opCodeToByte);
-        follow[1] = opCodeToByte[0];
-        follow[2] = opCodeToByte[1];
-        bool result1v2 = sendBytes(follow, 3);
-        delete[] opCodeToByte;
+        bool result1v2 = sendBytes(follow, 1);
         delete[] follow;
         if(!result1v2) return false;
         frame = frame.substr(2);
@@ -214,6 +204,7 @@ std::string ConnectionHandler::translateMessage() {
 
     char ch_tempArray[2] = {message[0],message[1]};
     short opcode = bytesToShort(ch_tempArray);
+
     //opcode could be of a ACK , ERROR or Notification
     if(opcode == 10){
         return translatingAckMessage(output, ch, message, ch_tempArray, opcode);
@@ -247,8 +238,11 @@ string ConnectionHandler::translatingAckMessage(string &output, char &ch, vector
     ch_tempArray[0] = message[2];
     ch_tempArray[1] = message[3];
     opcode = bytesToShort(ch_tempArray);
-    if(opcode == 4 || opcode == 7){
-        translateACKFollowOrLogstat(output, ch, message, ch_tempArray, opcode);
+    if(opcode == 4){
+        return translateAckFollow(output, ch, message, ch_tempArray);;
+    }
+    else if(opcode ==7){
+        translateAckLogstat(output, ch, message, ch_tempArray);
         return output;
     }
     else if(opcode == 8){
@@ -259,6 +253,20 @@ string ConnectionHandler::translatingAckMessage(string &output, char &ch, vector
     return translatingGeneralAckMessage(output, opcode);
     }
 }
+
+string ConnectionHandler::translateAckFollow(string &output, char &ch, vector<char> &message,
+                          char *ch_tempArray){
+    output.append("ACK ");
+    output.append("4 ");
+
+    //getting the next two bytes to see how many names to read
+    
+    string loggedIn;
+    getFrameAscii(loggedIn, '\0');
+    output.append(loggedIn.substr(0, loggedIn.length() - 1));
+    return output;
+    }
+
 
 /**
  * Part Of the "translatingAckMessage".
@@ -304,24 +312,19 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
 /**
  * Part of the "translateMessage" Function.
  * converting the incoming message from the server to a string to display to the user,
- * when the message is ACK follow or ACK logstat.
+ * when the message is ACK logstat.
  *
  * @param output                String to return to the client screen
  * @param ch                    Char to read each byte
  * @param message               Vector of chars represents the message that was received from the server
  * @param ch_tempArray          Char array used to convert chars to short number
- * @param opcode                Short represent the opcode of the received message
  */
-void ConnectionHandler::translateACKFollowOrLogstat(string &output, char &ch, vector<char> &message,
-                                                    char *ch_tempArray, short opcode) {
+void ConnectionHandler::translateAckLogstat(string &output, char &ch, vector<char> &message,
+                                            char *ch_tempArray) {
     //adding the ack with matching opcode
     output.append("ACK ");
-    if(opcode == 4){
-        output.append("4 ");
-    }
-    else{
-        output.append("7 ");
-    }
+    output.append("7 ");
+
     //getting the next two bytes to see how many names to read
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
