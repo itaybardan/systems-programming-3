@@ -5,7 +5,6 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <map>
-#include "EncoderDecoder.h"
 
 using boost::asio::ip::tcp;
 
@@ -80,8 +79,8 @@ public:
      * @param ch_tempArray          Char array used to convert chars to short number
      * @param opcode                Short represent the opcode of the recived message
      */
-    void translateACKFollowOrUserList(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray,
-                                      short opcode);
+    void translateACKFollowOrLogstat(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray,
+                                     short opcode);
 
     /**
      * Part Of the "translatingAckMessage".

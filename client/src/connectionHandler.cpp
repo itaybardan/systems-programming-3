@@ -64,21 +64,6 @@ short getOpCode(string inputType) {
     return opcode;
 }
 
-std::vector<char> stringToMessage(std::string input) {
-    char ch_Opcode[2];
-    std::vector<char> output;
-
-    std::string lineType = input.substr(0,input.find_first_of(" "));
-    input = input.substr(input.find_first_of(" ") + 1);
-
-    short opcode = getOpCode(lineType);
-    shortToBytes(opcode,ch_Opcode);
-    //output = convertingToMessageByType(input, ch_Opcode, output, opcode); TODO change
-    return output;
-}
-
-
-
 bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
     size_t tmp = 0;
 	boost::system::error_code error;
@@ -157,6 +142,7 @@ bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
     bool result2=sendBytes(frame.c_str(),frame.length());
     if(!result2) return false;
 
+    if(opcode == 3 || opcode==7) return true; //TODO every post needs to end with delimiter ';'.
     return sendBytes(&delimiter,1);
 }
 
@@ -192,6 +178,7 @@ void ConnectionHandler::close() {
  */
 std::string ConnectionHandler::translateMessage() {
     std::string output;
+
     char ch;
     //getting the first two bytes --> the opcode of the message
     std::vector<char> message;
@@ -199,13 +186,14 @@ std::string ConnectionHandler::translateMessage() {
         getBytes(&ch,1);
         message.push_back(ch);
     }
+
     char ch_tempArray[2] = {message[0],message[1]};
     short opcode = bytesToShort(ch_tempArray);
     //opcode could be of a ACK , ERROR or Notification
-    if(opcode == ACK){
+    if(opcode == 10){
         return translatingAckMessage(output, ch, message, ch_tempArray, opcode);
     }
-    else if(opcode == ERROR){
+    else if(opcode == 11){
         return translatingErrorMessage(output, ch, message, ch_tempArray, opcode);
     }
     else{
@@ -234,11 +222,11 @@ string ConnectionHandler::translatingAckMessage(string &output, char &ch, vector
     ch_tempArray[0] = message[2];
     ch_tempArray[1] = message[3];
     opcode = bytesToShort(ch_tempArray);
-    if(opcode == FOLLOW || opcode == USERLIST){
-        translateACKFollowOrUserList(output, ch, message, ch_tempArray, opcode);
+    if(opcode == 4 || opcode == 7){
+        translateACKFollowOrLogstat(output, ch, message, ch_tempArray, opcode);
         return output;
     }
-    else if(opcode == STAT){
+    else if(opcode == 8){
         return translatingAckStatMessage(output, ch, message, ch_tempArray);
     }
     else{
@@ -291,7 +279,7 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
 /**
  * Part of the "translateMessage" Function.
  * converting the incoming message from the server to a string to display to the user,
- * when the message is ACK follow or ACK userList
+ * when the message is ACK follow or ACK logstat.
  *
  * @param output                String to return to the client screen
  * @param ch                    Char to read each byte
@@ -299,11 +287,11 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
  * @param ch_tempArray          Char array used to convert chars to short number
  * @param opcode                Short represent the opcode of the received message
  */
-void ConnectionHandler::translateACKFollowOrUserList(string &output, char &ch, vector<char> &message,
-                                                     char *ch_tempArray, short opcode) {
+void ConnectionHandler::translateACKFollowOrLogstat(string &output, char &ch, vector<char> &message,
+                                                    char *ch_tempArray, short opcode) {
     //adding the ack with matching opcode
     output.append("ACK ");
-    if(opcode == FOLLOW){
+    if(opcode == 4){
         output.append("4 ");
     }
     else{

@@ -17,12 +17,10 @@ class KeyboardReader {
             //T2
             void run() {
                  while (!terminate) {
-                     std::cout << "Give message:" << std::endl;
                     std::string input;
                      std::getline(std::cin, input);
                      if (input == "LOGOUT") {
                          logoutCheck(input);
-                         std::cout << terminate << std::endl;
                      }
 
                      else if (!handler->sendLine(input)) {
@@ -64,6 +62,8 @@ int main(int argc, char *argv[]) {
     KeyboardReader reader(&connectionHandler, terminate);
     std::thread T2(&KeyboardReader::run,&reader);
 
+    std::cout << "Welcome! Please register if you're not yet registered, otherwise please login to your account." << std::endl;
+
     while(!terminate){
         std::string answer = connectionHandler.translateMessage(); //TODO change to getLine
         std::cout << answer << std::endl;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     }
 
-    std::cout << "Main end" << std::endl;
     T2.join();
+    std::cout << "Main end" << std::endl;
     return 0;
 }
