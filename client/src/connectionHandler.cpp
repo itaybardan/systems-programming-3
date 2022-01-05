@@ -136,10 +136,23 @@ bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
     encodeMessage(frame, opcode);
 
     shortToBytes(opcode, opCodeToByte);
-    bool result1= sendBytes(opCodeToByte, 2);
-    delete[] opCodeToByte;
+    bool result1= sendBytes(opCodeToByte, 2); //sending opcode
+
     if(!result1) return false;
-    bool result2=sendBytes(frame.c_str(),frame.length());
+
+    if(opcode == 4) {
+        std::cout << "follwo case " << frame << std:: endl;
+        opCodeToByte[0] = frame[0];
+        bool result1v2 = sendBytes(opCodeToByte, 1);
+        if(!result1v2) return false;
+        shortToBytes(1,opCodeToByte);
+        result1v2 = sendBytes(opCodeToByte, 2);
+        if(!result1v2) return false;
+        frame = frame.substr(1);
+    }
+
+    delete[] opCodeToByte;
+    bool result2=sendBytes(frame.c_str(),frame.length()); //sending the rest of the frame
     if(!result2) return false;
 
     if(opcode == 3 || opcode==7) return true; //TODO every post needs to end with delimiter ';'.
@@ -378,23 +391,3 @@ string ConnectionHandler::translatingNotificationMessage(string &output, char &c
     output.append(content.substr(0,content.length()-1));
     return output;
 }
-//endregion Translate Message From Server Functions
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
