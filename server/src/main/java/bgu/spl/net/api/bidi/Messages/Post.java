@@ -16,7 +16,8 @@ public class Post extends Message {
 
     /**
      * Default Constructor.
-     * @param content       String represents the content of the post.
+     *
+     * @param content String represents the content of the post.
      */
     public Post(String content) {
         this.opcode = Opcode.POST;
@@ -31,7 +32,8 @@ public class Post extends Message {
 
     /**
      * Convert all the data of this Post message to a byte array.
-     * @return      Byte array represent this Post message in the right order according to the server protocol
+     *
+     * @return Byte array represent this Post message in the right order according to the server protocol
      */
     @Override
     public byte[] convertMessageToBytes() {

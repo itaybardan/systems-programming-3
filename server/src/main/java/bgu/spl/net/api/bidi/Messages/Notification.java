@@ -24,9 +24,10 @@ public class Notification extends Message {
 
     /**
      * Default Constructor
-     * @param privateMessageOrPublicPost            Byte declaring whether it's a private or public message.
-     * @param postingUser                           String represents the user Name who post this message.
-     * @param content                               String represent the content of this message.
+     *
+     * @param privateMessageOrPublicPost Byte declaring whether it's a private or public message.
+     * @param postingUser                String represents the user Name who post this message.
+     * @param content                    String represent the content of this message.
      */
     public Notification(byte privateMessageOrPublicPost, String postingUser, String content) {
         this.opcode = Opcode.NOTIFICATION;
@@ -51,7 +52,8 @@ public class Notification extends Message {
 
     /**
      * Convert all the data of this Notification message to a byte array.
-     * @return      Byte array represent this Notification message in the right order according to the server protocol
+     *
+     * @return Byte array represent this Notification message in the right order according to the server protocol
      */
     @Override
     public byte[] convertMessageToBytes() {
@@ -62,19 +64,19 @@ public class Notification extends Message {
         byte[] output = new byte[opcode.length + 1 + postingUserBytes.length + contentBytes.length + 2];
         int index = 0;
         //inserting the data of this message to a single byte array to return.
-        index = insertArray(opcode,output,index);
+        index = insertArray(opcode, output, index);
         output[index] = this.privateMessageOrPublicPost;
         index++;
-        index = insertArray(postingUserBytes,output,index);
+        index = insertArray(postingUserBytes, output, index);
         output[index] = '\0';
         index++;
-        index = insertArray(contentBytes,output,index);
+        index = insertArray(contentBytes, output, index);
         output[index] = '\0';
         return output;
     }
 
     /**
-     *No Need to return an Ack Message to a Notification message
+     * No Need to return an Ack Message to a Notification message
      */
     @Override
     public Ack generateAckMessage() {

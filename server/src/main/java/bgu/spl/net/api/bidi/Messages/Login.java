@@ -21,11 +21,12 @@ public class Login extends Message {
 
     /**
      * Default Constructor.
-     * @param username      String represents the username who requested to login.
-     * @param password      String represents the password of the user who requested to login.
+     *
+     * @param username String represents the username who requested to login.
+     * @param password String represents the password of the user who requested to login.
      */
     public Login(String username, String password) {
-        this.opcode=Opcode.LOGIN;
+        this.opcode = Opcode.LOGIN;
         this.username = username;
         this.password = password;
     }
@@ -42,7 +43,8 @@ public class Login extends Message {
 
     /**
      * Convert all the data of this Login message to a byte array.
-     * @return      Byte array represent this Login message in the right order according to the server protocol
+     *
+     * @return Byte array represent this Login message in the right order according to the server protocol
      */
     @Override
     public byte[] convertMessageToBytes() {
@@ -50,7 +52,7 @@ public class Login extends Message {
         byte[] opcode = this.shortToBytes(this.opcode.getCode());
         byte[] usernameBytes = this.username.getBytes(StandardCharsets.UTF_8);
         byte[] passwordBytes = this.password.getBytes(StandardCharsets.UTF_8);
-        byte[] output = new byte[opcode.length + usernameBytes.length+passwordBytes.length+2];
+        byte[] output = new byte[opcode.length + usernameBytes.length + passwordBytes.length + 2];
         int index = 0;
         //inserting the data in a single byte array to return.
         index = insertArray(opcode, output, index);
