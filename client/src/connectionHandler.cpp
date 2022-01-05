@@ -113,7 +113,7 @@ void encodeMessage(std::string &message, short opcode){
             break;
         case(3): message.clear();
             break;
-        case(4): std::replace(message.begin(), message.end() , ' ', '\0');
+        case(4):
             break;
         case(6): {
             std::replace(message.begin(), message.end(), ' ', '\0');
@@ -132,25 +132,38 @@ bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
     short opcode = getOpCode(frame.substr(0,frame.find_first_of(" ")));
     char* opCodeToByte = new char[2];
 
-    frame = frame.substr(frame.find_first_of(" ") + 1); //we removed the code type from the line
-    encodeMessage(frame, opcode);
+
 
     shortToBytes(opcode, opCodeToByte);
     bool result1= sendBytes(opCodeToByte, 2); //sending opcode
-
+    delete[] opCodeToByte;
     if(!result1) return false;
 
+    frame = frame.substr(frame.find_first_of(" ") + 1); //we removed the code type from the line
+    encodeMessage(frame, opcode);
+
+
     if(opcode == 4) {
-        opCodeToByte[0] = frame[0];
-        bool result1v2 = sendBytes(opCodeToByte, 1);
-        if(!result1v2) return false;
+        opCodeToByte = new char[2];
+        char* follow = new char[3];
+
+        std::cout << frame[0] << std::endl;
+        if(frame[0] == '0') follow[0] = 0;
+        else follow[0] = 1;
+
+        std::cout << follow[0] << std::endl;
+
         shortToBytes(1,opCodeToByte);
-        result1v2 = sendBytes(opCodeToByte, 2);
+        follow[1] = opCodeToByte[0];
+        follow[2] = opCodeToByte[1];
+        bool result1v2 = sendBytes(follow, 3);
+        delete[] opCodeToByte;
+        delete[] follow;
         if(!result1v2) return false;
-        frame = frame.substr(1);
+        frame = frame.substr(2);
     }
 
-    delete[] opCodeToByte;
+
     bool result2=sendBytes(frame.c_str(),frame.length()); //sending the rest of the frame
     if(!result2) return false;
 

@@ -32,13 +32,13 @@ class KeyboardReader {
                 std::cout << "T2 end" << std::endl;
             }
             void logoutCheck(std::string input){
-                std::unique_lock <std::mutex> lock(readLock); //waits for update from the main thread
+                std::unique_lock <std::mutex> lock(readLock);
                 if (!handler->sendLine(input)) {
                     std::cout << "Disconnected. Exiting...\n" << std::endl;
                     terminate=true;
                     return;
                 }
-                condition.wait(lock);
+                condition.wait(lock); //waits for update from the main thread
             }
 };
 
