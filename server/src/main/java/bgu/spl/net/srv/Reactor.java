@@ -1,18 +1,12 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
-import bgu.spl.net.api.MessagingProtocol;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
-import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.api.bidi.ConnectionsImpl;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedSelectorException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -23,8 +17,8 @@ public class Reactor<T> implements Server<T> {
     private final Supplier<BidiMessagingProtocol<T>> protocolFactory;
     private final Supplier<MessageEncoderDecoder<T>> readerFactory;
     private final ActorThreadPool pool;
+    private final ConcurrentLinkedQueue<Runnable> selectorTasks = new ConcurrentLinkedQueue<>();
     private Selector selector;
-
     /**
      * AtomicInteger to generate a unique connectionID to each new Client.
      */
@@ -33,10 +27,7 @@ public class Reactor<T> implements Server<T> {
      * Connections Object to hold and map all the current active ConnectionHandlers in the server.
      */
     private ConnectionsImpl<T> connections;
-
-
     private Thread selectorThread;
-    private final ConcurrentLinkedQueue<Runnable> selectorTasks = new ConcurrentLinkedQueue<>();
 
     public Reactor(
             int numThreads,
@@ -54,16 +45,16 @@ public class Reactor<T> implements Server<T> {
 
     @Override
     public void serve() {
-	selectorThread = Thread.currentThread();
+        selectorThread = Thread.currentThread();
         try (Selector selector = Selector.open();
-                ServerSocketChannel serverSock = ServerSocketChannel.open()) {
+             ServerSocketChannel serverSock = ServerSocketChannel.open()) {
 
             this.selector = selector; //just to be able to close
 
             serverSock.bind(new InetSocketAddress(port));
             serverSock.configureBlocking(false);
             serverSock.register(selector, SelectionKey.OP_ACCEPT);
-			System.out.println("Server started (Reactor)");
+            System.out.println("Server started (Reactor)");
 
             while (!Thread.currentThread().isInterrupted()) {
 
@@ -102,7 +93,7 @@ public class Reactor<T> implements Server<T> {
             key.interestOps(ops);
         } else {
             selectorTasks.add(() -> {
-                if(key.isValid())
+                if (key.isValid())
                     key.interestOps(ops);
             });
             selector.wakeup();
@@ -119,7 +110,7 @@ public class Reactor<T> implements Server<T> {
                 clientChan,
                 this);
         int currentId = this.connectionIdGenerator.getAndIncrement();
-        this.connections.addConnection(currentId,handler);
+        this.connections.addConnection(currentId, handler);
         handler.start(this.connections, currentId);
         clientChan.register(selector, SelectionKey.OP_READ, handler);
     }
@@ -135,7 +126,7 @@ public class Reactor<T> implements Server<T> {
             }
         }
 
-	    if (key.isValid() && key.isWritable()) {
+        if (key.isValid() && key.isWritable()) {
             handler.continueWrite();
         }
     }

@@ -19,7 +19,7 @@ public class TPCMain {
         //creating and activating the Tread-Per-Client Server
         Server<Message> threadPerClientServer = Server.threadPerClient(
                 9090,
-                () -> new BidiMessageProtocolImpl(dataManager,logOrSendLock,registerOrUserList),
+                () -> new BidiMessageProtocolImpl(dataManager, logOrSendLock, registerOrUserList),
                 BidiMessageEncoderDecoder::new);
 
         threadPerClientServer.serve();

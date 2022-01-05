@@ -18,14 +18,13 @@ using std::endl;
 using std::string;
 
 
-
 int main(int argc, char *argv[]) {
     if (argc < 3) {
         std::cerr << "Usage: " << argv[0] << " host port" << std::endl << std::endl;
         return -1;
     }
     std::string host = argv[1];
-    auto port = (short)atoi(argv[2]);
+    auto port = (short) atoi(argv[2]);
     ConnectionHandler connectionHandler(host, port);
     if (!connectionHandler.connect()) {
         std::cerr << "Cannot connect to " << host << ":" << port << std::endl;
@@ -33,7 +32,7 @@ int main(int argc, char *argv[]) {
     }
     //initialising IO Thread
     ClientRequestTask clientRequestTask(&connectionHandler);
-    std::thread clientRequestTaskThread(&ClientRequestTask::run,&clientRequestTask);
+    std::thread clientRequestTaskThread(&ClientRequestTask::run, &clientRequestTask);
     //initialising communication thread
     ServerListenerTask serverListenerTask(&connectionHandler);
     std::thread serverListenerTaskThread(&ServerListenerTask::run, &serverListenerTask);

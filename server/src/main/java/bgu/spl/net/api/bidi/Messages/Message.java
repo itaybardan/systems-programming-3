@@ -16,75 +16,6 @@ public abstract class Message {
     //region Opcode Enum
 
     /**
-     * Enum to represents the Opcode the defines Each message
-     */
-    public enum Opcode {
-        REGISTER,
-        LOGIN,
-        LOGOUT,
-        FOLLOW,
-        POST,
-        PM,
-        USERLIST,
-        STAT,
-        NOTIFICATION,
-        ACK,
-        ERROR,
-        BLOCK;
-
-    public short getCode() {
-        if (this == Opcode.REGISTER) {
-            return 1;
-        } else if (this == Opcode.LOGIN) {
-            return 2;
-        } else if (this == Opcode.LOGOUT) {
-            return 3;
-        } else if (this == Opcode.FOLLOW) {
-            return 4;
-        } else if (this == Opcode.POST) {
-            return 5;
-        } else if (this == Opcode.PM) {
-            return 6;
-        } else if (this == Opcode.USERLIST) {
-            return 7;
-        } else if (this == Opcode.STAT) {
-            return 8;
-        } else if (this == Opcode.NOTIFICATION) {
-            return 9;
-        } else if (this == Opcode.ACK) {
-            return 10;
-        } else if (this == Opcode.BLOCK) {
-            return 12;
-        } else {
-            //error message
-            return 11;
-        }
-    }
-
-}
-    //endregion Opcode Enum
-
-
-    /**
-     * Converting a short number to a array of bytes.
-     *
-     * @param num Short number to be converted.
-     * @return Array of size 2 represents the given number in bytes.
-     */
-    public byte[] shortToBytes(short num) {
-        byte[] bytesArr = new byte[2];
-        bytesArr[0] = (byte) ((num >> 8) & 0xFF);
-        bytesArr[1] = (byte) (num & 0xFF);
-        return bytesArr;
-    }
-
-    //region Getters
-    public Opcode getOpcode() {
-        return opcode;
-    }
-    //endregion Getters
-
-    /**
      * converting a bytes array to the equivalent short number.
      *
      * @param byteArr Bytes array of size 2 to be converted.
@@ -95,6 +26,7 @@ public abstract class Message {
         result += (short) (byteArr[1] & 0xff);
         return result;
     }
+    //endregion Opcode Enum
 
     /**
      * Convert the given number to the matching opcode.
@@ -134,6 +66,25 @@ public abstract class Message {
     }
 
     /**
+     * Converting a short number to a array of bytes.
+     *
+     * @param num Short number to be converted.
+     * @return Array of size 2 represents the given number in bytes.
+     */
+    public byte[] shortToBytes(short num) {
+        byte[] bytesArr = new byte[2];
+        bytesArr[0] = (byte) ((num >> 8) & 0xFF);
+        bytesArr[1] = (byte) (num & 0xFF);
+        return bytesArr;
+    }
+    //endregion Getters
+
+    //region Getters
+    public Opcode getOpcode() {
+        return opcode;
+    }
+
+    /**
      * Convert all the data of a certain message to a byte array.
      *
      * @return Byte array represent the current message in the right order according to the server protocol
@@ -163,6 +114,54 @@ public abstract class Message {
      */
     public Ack generateAckMessage() {
         return new Ack(this.opcode, new byte[0][0]);
+    }
+
+    /**
+     * Enum to represents the Opcode the defines Each message
+     */
+    public enum Opcode {
+        REGISTER,
+        LOGIN,
+        LOGOUT,
+        FOLLOW,
+        POST,
+        PM,
+        USERLIST,
+        STAT,
+        NOTIFICATION,
+        ACK,
+        ERROR,
+        BLOCK;
+
+        public short getCode() {
+            if (this == Opcode.REGISTER) {
+                return 1;
+            } else if (this == Opcode.LOGIN) {
+                return 2;
+            } else if (this == Opcode.LOGOUT) {
+                return 3;
+            } else if (this == Opcode.FOLLOW) {
+                return 4;
+            } else if (this == Opcode.POST) {
+                return 5;
+            } else if (this == Opcode.PM) {
+                return 6;
+            } else if (this == Opcode.USERLIST) {
+                return 7;
+            } else if (this == Opcode.STAT) {
+                return 8;
+            } else if (this == Opcode.NOTIFICATION) {
+                return 9;
+            } else if (this == Opcode.ACK) {
+                return 10;
+            } else if (this == Opcode.BLOCK) {
+                return 12;
+            } else {
+                //error message
+                return 11;
+            }
+        }
+
     }
 
 }
