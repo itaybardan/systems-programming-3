@@ -65,7 +65,9 @@ int main(int argc, char *argv[]) {
     std::cout << "Welcome! Please register if you're not yet registered, otherwise please login to your account." << std::endl;
 
     while(!terminate){
-        std::string answer = connectionHandler.translateMessage(); //TODO change to getLine
+        std::string answer;
+        connectionHandler.getLine(answer);
+
         std::cout << answer << std::endl;
         if (answer == "ACK 3" || answer == "ERROR 3") {
                 std::lock_guard<std::mutex> lock(readLock);

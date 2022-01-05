@@ -14,7 +14,7 @@ private:
     const short port_;
     boost::asio::io_service io_service_;   // Provides core I/O functionality
     tcp::socket socket_;
-    const char ENDLINE = ';';
+    const char DELIMITER = ';';
 public:
     ConnectionHandler(std::string host, short port);
     virtual ~ConnectionHandler();
@@ -48,13 +48,6 @@ public:
 
     // Close down the connection properly.
     void close();
-
-    //region Translate Message From Server Functions
-    /**
-     * Translating the incoming message from the server to string
-     * @return          String representation of the message recieved by the server
-     */
-    std::string translateMessage();
 
     /**
      * Part of the "translateMessage" function.
@@ -124,8 +117,6 @@ public:
      * @return                 String representation of the Error message that was recieved by the server.
      */
     std::string translatingErrorMessage(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
-
-    //endregion Translate Message From Server Functions
 
     void encodeMessage(std::string &message, short opcode);
 

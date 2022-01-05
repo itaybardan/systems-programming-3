@@ -49,6 +49,7 @@ void ConnectionHandler::shortToBytes(short num, char *bytesArr) {
     bytesArr[0] = ((num >> 8) & 0xFF);
     bytesArr[1] = (num & 0xFF);
 }
+
 short ConnectionHandler::getOpCode(string inputType) {
     short opcode=11;
     if(inputType == "REGISTER") opcode=1;
@@ -95,10 +96,6 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
         return false;
     }
     return true;
-}
-
-bool ConnectionHandler::getLine(std::string& line) {
-    return getFrameAscii(line, ';');
 }
 
 bool ConnectionHandler::sendLine(std::string& line) { //TODO CHANGE JAVA CODE TO ACCOMMODATE THE DELIMITER (';') CORRECTLY
@@ -191,8 +188,7 @@ void ConnectionHandler::close() {
  * Translating the incoming message from the server to string
  * @return          String representation of the message received by the server
  */
-std::string ConnectionHandler::translateMessage() {
-    std::string output;
+bool ConnectionHandler::getLine(std::string &output) {
 
     char ch;
     //getting the first two bytes --> the opcode of the message
@@ -207,15 +203,16 @@ std::string ConnectionHandler::translateMessage() {
 
     //opcode could be of a ACK , ERROR or Notification
     if(opcode == 10){
-        return translatingAckMessage(output, ch, message, ch_tempArray, opcode);
+        translatingAckMessage(output, ch, message, ch_tempArray, opcode);
     }
     else if(opcode == 11){
-        return translatingErrorMessage(output, ch, message, ch_tempArray, opcode);
+        translatingErrorMessage(output, ch, message, ch_tempArray, opcode);
     }
     else{
         //notification case
-        return translatingNotificationMessage(output, ch);
+        translatingNotificationMessage(output, ch);
     }
+    return true;
 }
 
 /**
