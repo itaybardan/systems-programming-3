@@ -1,4 +1,5 @@
 package bgu.spl.net.api.bidi.Messages;
+
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -21,8 +22,9 @@ public class Register extends Message {
 
     /**
      * Default constructor.
-     * @param username      String represents the Username who wants to register to the server.
-     * @param password      String represents the Password of the4 user who wants to register to the server.
+     *
+     * @param username String represents the Username who wants to register to the server.
+     * @param password String represents the Password of the4 user who wants to register to the server.
      */
     public Register(String username, String password) {
         this.opcode = Opcode.REGISTER;
@@ -42,7 +44,8 @@ public class Register extends Message {
 
     /**
      * Convert all the data of this Register message to a byte array.
-     * @return      Byte array represent this Register message in the right order according to the server protocol
+     *
+     * @return Byte array represent this Register message in the right order according to the server protocol
      */
     @Override
     public byte[] convertMessageToBytes() {
@@ -50,7 +53,7 @@ public class Register extends Message {
         byte[] opcode = this.shortToBytes(this.opcode.getCode());
         byte[] usernameBytes = this.username.getBytes(StandardCharsets.UTF_8);
         byte[] passwordBytes = this.password.getBytes(StandardCharsets.UTF_8);
-        byte[] output = new byte[opcode.length + usernameBytes.length+passwordBytes.length+2];
+        byte[] output = new byte[opcode.length + usernameBytes.length + passwordBytes.length + 2];
         int index = 0;
         //inserting the data of this message to a single byte array to return.
         index = insertArray(opcode, output, index);

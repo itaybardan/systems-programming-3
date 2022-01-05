@@ -4,6 +4,7 @@ import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.api.bidi.Messages.Message;
 import bgu.spl.net.api.bidi.Messages.Notification;
 import bgu.spl.net.api.bidi.User;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
@@ -87,25 +88,27 @@ public class DataManager {
 
     /**
      * Get the User Object That match the given name.
-     * @param name          String represents the wanted UserName.
-     * @return          User that match the given user name.
-     *                  If the user was not found in the data base --> returns null.
+     *
+     * @param name String represents the wanted UserName.
+     * @return User that match the given user name.
+     * If the user was not found in the data base --> returns null.
      */
-    public User getUserByName(String name){
+    public User getUserByName(String name) {
         return this.namesToRegisteredUsers.get(name);
     }
 
     /**
      * Creates and add a new user to the registered users data base.
-     * @param userName          String represents the new user Name.
-     * @param password          String represents the new user password.
+     *
+     * @param userName String represents the new user Name.
+     * @param password String represents the new user password.
      */
-    public void registerUser(String userName, String password){
+    public void registerUser(String userName, String password) {
         //making sure no one try to register at the same time or use the UserList function at the same time.
         this.registerLock.lock();
         int userNumber = this.generateUserNumber();
         //create new user with the given details and add it to the data base.
-        User newUser = new User(userName,password,userNumber);
+        User newUser = new User(userName, password, userNumber);
         this.namesToRegisteredUsers.put(userName, newUser);
         this.registerLock.unlock();
     }
@@ -113,19 +116,21 @@ public class DataManager {
 
     /**
      * add a certain user to the Logged in users data base.
-     * @param toLogin           User Object to add to the logged in Users data base.
+     *
+     * @param toLogin User Object to add to the logged in Users data base.
      */
-    public void loginUser(User toLogin){
+    public void loginUser(User toLogin) {
         this.logLock.lock();
-        this.namesToLoginUsers.put(toLogin.getConnId(),toLogin);
+        this.namesToLoginUsers.put(toLogin.getConnId(), toLogin);
         this.logLock.unlock();
     }
 
     /**
      * Removing the User who matches the given connection Id from the logged in data base.
+     *
      * @param connId
      */
-    public void logoutUser(int connId){
+    public void logoutUser(int connId) {
         this.logLock.lock();
         this.namesToLoginUsers.get(connId).logout();
         this.namesToLoginUsers.remove(connId);
@@ -134,57 +139,58 @@ public class DataManager {
 
     /**
      * checks if there is any user logged in to the server.
-     * @return      'true' if the there are no users currently connected, 'else' otherwise.
+     *
+     * @return 'true' if the there are no users currently connected, 'else' otherwise.
      */
-    public boolean loginIsEmpty(){
+    public boolean loginIsEmpty() {
         return this.namesToLoginUsers.isEmpty();
     }
 
     /**
      * Get a logged in User that matches the given connection id
-     * @param connId            Integer represents the connection Id of the wanted user.
-     * @return      Logged in User object that matches the given connection id.
-     *              If there is no user that matches the given id --> return null.
      *
+     * @param connId Integer represents the connection Id of the wanted user.
+     * @return Logged in User object that matches the given connection id.
+     * If there is no user that matches the given id --> return null.
      */
-    public User getConnectedUser(int connId){
+    public User getConnectedUser(int connId) {
         return this.namesToLoginUsers.get(connId);
     }
 
     /**
      * Editing a given user to Follow or Unfollow a collection of users according to the given parameters.
-     * @param toCheck               User Object to edit his Follow and Unfollow List.
-     * @param users                 List of String represents UserNames  to follow or unfollow.
-     * @param follow                Boolean represents whether to follow or unfollow the users in the list.
-     * @return          List of String represents all the users which was successfully followed or unfollowed
+     *
+     * @param toCheck User Object to edit his Follow and Unfollow List.
+     * @param users   List of String represents UserNames  to follow or unfollow.
+     * @param follow  Boolean represents whether to follow or unfollow the users in the list.
+     * @return List of String represents all the users which was successfully followed or unfollowed
      */
-    public List<String> followOrUnfollow(User toCheck,List<String> users,boolean follow){
+    public List<String> followOrUnfollow(User toCheck, List<String> users, boolean follow) {
         List<String> successful = new Vector<>();
-        if(follow){
+        if (follow) {
             //if it was a follow request
-            for(String currentUser:users){
+            for (String currentUser : users) {
                 //for each name in the given list
                 User current = this.namesToRegisteredUsers.get(currentUser);
-                if(current != null){
+                if (current != null) {
                     //if the wanted user is registered
-                        //updated the toCheck User following database
-                        if(!toCheck.getFollowing().contains(current)){
-                            toCheck.addFollowing(current);
-                            current.addFollower(toCheck);
-                            successful.add(currentUser);
+                    //updated the toCheck User following database
+                    if (!toCheck.getFollowing().contains(current) && !toCheck.getBlockedBy().contains(current)) {
+                        toCheck.addFollowing(current);
+                        current.addFollower(toCheck);
+                        successful.add(currentUser);
                     }
                 }
             }
-        }
-        else{
+        } else {
             //unfollow
-            for(String currentUser:users){
+            for (String currentUser : users) {
                 User current = this.namesToRegisteredUsers.get(currentUser);
-                if(current != null){
-                        if(toCheck.getFollowing().contains(current)){
-                            toCheck.removeFollowing(current);
-                            current.removeFollower(toCheck);
-                            successful.add(currentUser);
+                if (current != null) {
+                    if (toCheck.getFollowing().contains(current)) {
+                        toCheck.removeFollowing(current);
+                        current.removeFollower(toCheck);
+                        successful.add(currentUser);
                     }
 
                 }
@@ -195,45 +201,51 @@ public class DataManager {
 
     /**
      * Save a Message that was sent by a certain user in the MessageHistory database
-     * @param toSave        Notification Message represents the message to Save in the Message history database
+     *
+     * @param toSave Notification Message represents the message to Save in the Message history database
      */
-    public void addToHistory(Notification toSave){
+    public void addToHistory(Notification toSave) {
         this.messageHistory.add(toSave);
     }
 
     /**
      * Send Notification message from to a certain client
-     * @param connections                   Connections object that holds all the connections handler of the server.
-     * @param connectionID                  Integer represents the id of the recipient client in the connections object.
-     * @param toSend                        Notification message to send.
+     *
+     * @param connections  Connections object that holds all the connections handler of the server.
+     * @param connectionID Integer represents the id of the recipient client in the connections object.
+     * @param toSend       Notification message to send.
      */
-    public void sendNotification(Connections<Message> connections, int connectionID, Notification toSend){
+    public void sendNotification(Connections<Message> connections, int connectionID, Notification toSend) {
         this.sendLock.lock();
-        connections.send(connectionID,toSend);
+        connections.send(connectionID, toSend);
         this.sendLock.unlock();
     }
 
     /**
      * Generate a unique new User number
-     * @return              Integer represents the unique id of the current connecting user.
+     *
+     * @return Integer represents the unique id of the current connecting user.
      */
-    private int generateUserNumber(){
+    private int generateUserNumber() {
         return this.numberOfUsers.getAndIncrement();
     }
 
     /**
      * get all the UserNames of the users that are currently registered to the server.
-     * @return      List of Strings represents the names of all the current registered users.
+     *
+     * @return List of Strings represents the names of all the current registered users.
      */
-    public List<String> returnRegisteredUsers(){
+    public List<String> returnRegisteredUsers(User connectedUser) {
         this.userListLock.lock();
         //getting the users and sorting them by their registration order
         List<User> users = new Vector<>(this.namesToRegisteredUsers.values());
         Collections.sort(users);
         List<String> registeredUsers = new Vector<>();
-        for (User user:users) {
-            //for each user --> add it's name to the output list.
-            registeredUsers.add(user.getUserName());
+        for (User user : users) {
+            //for each user --> add its name to the output list.
+            if (!connectedUser.getBlockedBy().contains(user)) {
+                registeredUsers.add(user.getUserName());
+            }
         }
         this.userListLock.unlock();
         return registeredUsers;
@@ -241,13 +253,14 @@ public class DataManager {
 
     /**
      * calculates the number of posts of a certain user.
-     * @param postingUser       String represents the user that the function needs to calculate his post number in the server.
-     * @return           Short number represents the amount of posts the posting user posted.
+     *
+     * @param postingUser String represents the user that the function needs to calculate his post number in the server.
+     * @return Short number represents the amount of posts the posting user posted.
      */
-    public short returnNumberOfPosts(String postingUser){
+    public short returnNumberOfPosts(String postingUser) {
         short output = 0;
-        for(Notification msg:messageHistory){
-            if((msg.getPrivateMessageOrPublicPost() == 1) && (msg.getPostingUser().equals(postingUser))){
+        for (Notification msg : messageHistory) {
+            if ((msg.getPrivateMessageOrPublicPost() == 1) && (msg.getPostingUser().equals(postingUser))) {
                 output++;
             }
         }
