@@ -260,7 +260,7 @@ string ConnectionHandler::translateAckFollow(string &output, char &ch, vector<ch
     output.append("4 ");
 
     //getting the next two bytes to see how many names to read
-    
+
     string loggedIn;
     getFrameAscii(loggedIn, '\0');
     output.append(loggedIn.substr(0, loggedIn.length() - 1));
