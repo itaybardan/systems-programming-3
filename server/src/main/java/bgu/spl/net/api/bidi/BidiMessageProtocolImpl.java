@@ -17,20 +17,20 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
     /**
      * Boolean represents if the connection should terminate.
      */
-    private boolean shouldTerminate;
+    private final boolean shouldTerminate;
     /**
      * Connections<Message> Represents the set of connections (connectionHandlers) currently connected.
      */
     private Connections<Message> connections;
     /**
-     * Represents a read and write locks. Login and Logout are write locks, Post and PM are read lock.
+     * Represents a read and write locks. Login and Logout are written locks, Post and PM are read lock.
      */
-    private ReadWriteLock logOrSendLock;
+    private final ReadWriteLock logOrSendLock;
 
     /**
-     * Represents a read and write locks. Register is write lock, Userlist read lock.
+     * Represents a read and write locks. Register is write lock, User list read lock.
      */
-    private ReadWriteLock registerOrUserListLock;
+    private final ReadWriteLock registerOrUserListLock;
 
     /**
      * Integer represents a personal connection ID of the current connectionHandler that holds this protocol.
@@ -94,7 +94,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
     }
 
     /**
-     * Is called when user requests to register to the server. Register him unless alreardy been registed.
+     * Is called when user requests to register to the server. Register him unless already been register.
      *
      * @param registerMsg Represents a Register message to be processed.
      */
@@ -111,7 +111,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
     }
 
     /**
-     * Is called when user requests to login to the server. Logs in, unless already logged in, not registered or password doesn't match.
+     * Is called when user requests to log in to the server. Logs in, unless already logged in, not registered or password doesn't match.
      *
      * @param loginMsg Represents a Login message to be processed.
      */
@@ -123,7 +123,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         } else {
             User toCheck = this.dataManager.getUserByName(loginMsg.getUsername());
             if ((toCheck == null) || (!toCheck.getPassword().equals(loginMsg.getPassword())) || (toCheck.isConnected())) {
-                //If the user is not registered \ password doesnt match \ is already connected --> return error message.
+                //If the user is not registered \ password doesn't match \ is already connected --> return error message.
                 this.connections.send(this.connectionID, new Error(loginMsg.getOpcode()));
             } else {
                 this.connections.send(connectionID, loginMsg.generateAckMessage());

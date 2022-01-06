@@ -10,7 +10,7 @@ public class Error extends Message {
     /**
      * Opcode of the Message which was canceled.
      */
-    private Opcode errorMessageOpcode;
+    private final Opcode errorMessageOpcode;
     //endregion Fields
 
     /**
@@ -38,7 +38,7 @@ public class Error extends Message {
         //inserting the error opcode.
         index = insertArray(opcode, output, index);
         //inserting the opcode of the message that was canceled.
-        index = insertArray(errorOpcode, output, index);
+        insertArray(errorOpcode, output, index);
         return output;
     }
 

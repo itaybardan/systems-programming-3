@@ -147,7 +147,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingStatMessage(byte nextByte) {
         // field1 = username
         Message output;
-        if (nextByte == '\0') {
+        if (nextByte == ';') {
             checkReduceField1();
             String username = new String(this.field1, StandardCharsets.UTF_8);
             output = new Stat(username);
@@ -170,7 +170,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         Message output;
         if (this.zeroCounter == 0) {
             //Inserting to username.
-            if (nextByte == '\0') {
+            if (nextByte == ';') {
                 this.zeroCounter++;
             } else {
                 insertByteToField1(nextByte);
@@ -178,7 +178,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             return null;
         } else {
             //Inserting content.
-            if (nextByte == '\0') {
+            if (nextByte == ';') {
                 output = generatePMMessage();
                 this.generalVariablesReset();
             } else {
@@ -213,7 +213,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingPostMessage(byte nextByte) {
         //field1 = content
         Message output;
-        if (nextByte == '\0') {
+        if (nextByte == ';') {
             //finished reading the message
             checkReduceField1();
             String content = new String(this.field1, StandardCharsets.UTF_8);
@@ -247,7 +247,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         } else {
             short numberOfUsers = Message.bytesToShort(this.field1);
             insertByteToField2(nextByte);
-            if (nextByte == '\0') {
+            if (nextByte == ';') {
                 // The current username ended.
                 this.zeroCounter++;
                 //to reduce the first three bytes of the follow \ unfollow and numberOfUsers bytes
@@ -265,7 +265,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingBlockMessage(byte nextByte) {
         // field1 = username
         Message output;
-        if (nextByte == '\0') {
+        if (nextByte == ';') {
             checkReduceField1();
             String username = new String(this.field1, StandardCharsets.UTF_8);
             output = new Block(username);
@@ -305,7 +305,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         Vector<String> allUsers = new Vector<>();
         int start = 0;
         for (int i = 0; i < field2Index; i++) {
-            if (field2[i] == '\0') {
+            if (field2[i] == ';') {
                 //finished a single user;
                 byte[] userByte = Arrays.copyOfRange(field2, start, i);
                 String user = new String(userByte, StandardCharsets.UTF_8);
@@ -329,7 +329,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         //Field1 = username | Field2 = password
         if (this.zeroCounter == 0) {
             //The next byte going to be to the userName
-            if (nextByte == '\0') {
+            if (nextByte == ';') {
                 // The current username ended.
                 checkReduceField1();
                 this.zeroCounter++;
@@ -339,7 +339,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             return null;
         } else {
             //The next byte is going to be to the password.
-            if (nextByte == '\0') {
+            if (nextByte == ';') {
                 checkReduceField2();
                 //Creating the Register or Login Message
                 return generateRegisterOrLoginMessage(outputOpcode);
@@ -400,9 +400,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private byte[] extendArray(byte[] array) {
         int size = array.length;
         byte[] temp = new byte[size * 2];
-        for (int i = 0; i < size; i++) {
-            temp[i] = array[i];
-        }
+        System.arraycopy(array, 0, temp, 0, size);
         return temp;
     }
 
@@ -415,9 +413,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
      */
     private byte[] reduceToGivenSize(byte[] toReduce, int realSize) {
         byte[] temp = new byte[realSize];
-        for (int i = 0; i < realSize; i++) {
-            temp[i] = toReduce[i];
-        }
+        System.arraycopy(toReduce, 0, temp, 0, realSize);
         return temp;
     }
 

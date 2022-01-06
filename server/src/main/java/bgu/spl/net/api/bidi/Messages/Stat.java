@@ -11,7 +11,7 @@ public class  Stat extends Message {
     /**
      * String represents the username that the client want to check his status.
      */
-    private String username;
+    private final String username;
     //endregion Fields
 
     /**

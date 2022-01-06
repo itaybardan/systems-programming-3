@@ -36,7 +36,7 @@ public class UserList extends Message {
      */
     public Ack generateAckMessage(short numberOfRegisteredUsers, List<String> users) {
 
-        //converting the number of of users to bytes array.
+        //converting the number of users to bytes array.
         byte[] numOfUsersBytes = this.shortToBytes(numberOfRegisteredUsers);
         byte[][] elements = new byte[1 + (2 * users.size())][];
         int index = 0;
