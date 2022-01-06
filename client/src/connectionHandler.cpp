@@ -203,14 +203,14 @@ bool ConnectionHandler::getLine(std::string &output) {
 
     //opcode could be of a ACK , ERROR or Notification
     if(opcode == 10){
-        translatingAckMessage(output, ch, message, ch_tempArray, opcode);
+        getMessageAck(output, ch, message, ch_tempArray, opcode);
     }
     else if(opcode == 11){
-        translatingErrorMessage(output, ch, message, ch_tempArray, opcode);
+        getErrorAck(output, ch, message, ch_tempArray, opcode);
     }
     else{
         //notification case
-        translatingNotificationMessage(output, ch);
+        getNotifyAck(output, ch);
     }
     return true;
 }
@@ -225,8 +225,8 @@ bool ConnectionHandler::getLine(std::string &output) {
  * @param opcode                        opcode of the message.
  * @return                  String representation of the ACK message that was received by the server.
  */
-string ConnectionHandler::translatingAckMessage(string &output, char &ch, vector<char> &message, char *ch_tempArray,
-                                                short opcode) {
+string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &message, char *ch_tempArray,
+                                        short opcode) {
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
@@ -236,23 +236,23 @@ string ConnectionHandler::translatingAckMessage(string &output, char &ch, vector
     ch_tempArray[1] = message[3];
     opcode = bytesToShort(ch_tempArray);
     if(opcode == 4){
-        return translateAckFollow(output, ch, message, ch_tempArray);;
+        return getFollowAck(output, ch, message, ch_tempArray);;
     }
     else if(opcode ==7){
-        translateAckLogstat(output, ch, message, ch_tempArray);
+        getLogstatAck(output, ch, message, ch_tempArray);
         return output;
     }
     else if(opcode == 8){
-        return translatingAckStatMessage(output, ch, message, ch_tempArray);
+        return getStatAck(output, ch, message, ch_tempArray);
     }
     else{
      //in case it's one of the following: 1.Register | 2.Login | 3.Logout | 4.Post | 5.Pm
-    return translatingGeneralAckMessage(output, opcode);
+    return getOtherAck(output, opcode);
     }
 }
 
-string ConnectionHandler::translateAckFollow(string &output, char &ch, vector<char> &message,
-                          char *ch_tempArray){
+string ConnectionHandler::getFollowAck(string &output, char &ch, vector<char> &message,
+                                       char *ch_tempArray){
     output.append("ACK ");
     output.append("4 ");
 
@@ -266,7 +266,7 @@ string ConnectionHandler::translateAckFollow(string &output, char &ch, vector<ch
 
 
 /**
- * Part Of the "translatingAckMessage".
+ * Part Of the "getMessageAck".
  * translating the stat Ack message that was recieved from the server
  *
  * @param output                        String to return to the client screen.
@@ -275,9 +275,9 @@ string ConnectionHandler::translateAckFollow(string &output, char &ch, vector<ch
  * @param ch_tempArray                  Char array to translate to short numbers.
  * @return              String represents the Stat Ack message that was sent by the server
  */
-string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
+string ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
     output.append("ACK 8 ");
-    //getting the next two bytes --> number of posts
+    //getting the next two bytes --> age of user
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
@@ -286,7 +286,7 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
     ch_tempArray[1] = message[5];
     output.append(std::to_string(bytesToShort(ch_tempArray)));
     output.append(" ");
-    //getting the next two bytes --> number of followers
+    //getting the next two bytes --> number of posts
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
@@ -295,7 +295,7 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
     ch_tempArray[1] = message[7];
     output.append(std::to_string(bytesToShort(ch_tempArray)));
     output.append(" ");
-    //getting the next two bytes --> number of following
+    //getting the next two bytes --> number of followers
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
@@ -303,6 +303,17 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
     ch_tempArray[0] = message[8];
     ch_tempArray[1] = message[9];
     output.append(std::to_string(bytesToShort(ch_tempArray)));
+    output.append(" ");
+    //getting the next two bytes --> number of following
+    for(int i = 0; i < 2; i++){
+        getBytes(&ch, 1);
+        message.push_back(ch);
+    }
+    ch_tempArray[0] = message[10];
+    ch_tempArray[1] = message[11];
+    output.append(std::to_string(bytesToShort(ch_tempArray)));
+
+
     return output;
 }
 
@@ -316,8 +327,8 @@ string ConnectionHandler::translatingAckStatMessage(string &output, char &ch, ve
  * @param message               Vector of chars represents the message that was received from the server
  * @param ch_tempArray          Char array used to convert chars to short number
  */
-void ConnectionHandler::translateAckLogstat(string &output, char &ch, vector<char> &message,
-                                            char *ch_tempArray) {
+void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &message,
+                                      char *ch_tempArray) {
     //adding the ack with matching opcode
     output.append("ACK ");
     output.append("7 ");
@@ -332,24 +343,33 @@ void ConnectionHandler::translateAckLogstat(string &output, char &ch, vector<cha
     short numberOfUsers = bytesToShort(ch_tempArray);
     //adding number of users
     output.append(std::to_string(numberOfUsers));
-    //getting all the users
+
+    char* numberToProcess= new char[2];
     for(int i = 0; i < numberOfUsers; i++){
-        //adding each name to the string
         output.append(" ");
+        //adding each user's stat to the string
+
+
         string currentName;
-        getFrameAscii(currentName, '\0');
-        output.append(currentName.substr(0,currentName.length()-1));
+        for (int j = 0; j < 4; ++j) {
+            getBytes(numberToProcess, 2);
+            short num = bytesToShort(numberToProcess);
+            currentName = currentName + std::to_string(num) + " ";
+        }
+        output.append(currentName);
+        getBytes(ch_tempArray, 1);
     }
+    delete[] numberToProcess;
 }
 
 /**
- * Part of the "translatingAckMessage".
+ * Part of the "getMessageAck".
  * Translating ack message of register,login,logout,post,pm
  * @param output                        String to return to the client screen.
  * @param opcode                        Char to use to read one char at a time from the server.
  * @return                  String representation of the Ack Message that was sent by the server.
  */
-string ConnectionHandler::translatingGeneralAckMessage(string &output, short opcode) const {
+string ConnectionHandler::getOtherAck(string &output, short opcode) const {
     output.append("ACK ");
     output.append(std::to_string(opcode));
     return output;
@@ -365,8 +385,8 @@ string ConnectionHandler::translatingGeneralAckMessage(string &output, short opc
  * @param opcode                        Opcode of the message.
  * @return                 String representation of the Error message that was received by the server.
  */
-string ConnectionHandler::translatingErrorMessage(string &output, char &ch, vector<char> &message, char *ch_tempArray,
-                                                  short opcode) {
+string ConnectionHandler::getErrorAck(string &output, char &ch, vector<char> &message, char *ch_tempArray,
+                                      short opcode) {
     output.append("ERROR ");
     for(int i = 0; i < 2; i++){
             getBytes(&ch, 1);
@@ -387,7 +407,7 @@ string ConnectionHandler::translatingErrorMessage(string &output, char &ch, vect
  * @param ch                    Char to use to read from the server.
  * @return              String represents the Notification Message that was sent from the server.
  */
-string ConnectionHandler::translatingNotificationMessage(string &output, char &ch) {
+string ConnectionHandler::getNotifyAck(string &output, char &ch) {
     output.append("NOTIFICATION ");
     getBytes(&ch, 1);
     //adding type of Notification

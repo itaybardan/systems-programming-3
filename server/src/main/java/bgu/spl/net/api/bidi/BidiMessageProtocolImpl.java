@@ -28,18 +28,18 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
     private ReadWriteLock logOrSendLock;
 
     /**
-     * Represents a read and write locks. Register is write lock, Userlist read lock.
+     * Represents a read and write locks. Register is write lock, LogStat read lock.
      */
-    private ReadWriteLock registerOrUserListLock;
+    private ReadWriteLock registerOrLogStatLock;
 
     /**
      * Integer represents a personal connection ID of the current connectionHandler that holds this protocol.
      */
     private int connectionID;
 
-    public BidiMessageProtocolImpl(DataManager dataManager, ReadWriteLock logOrSendLock, ReadWriteLock registerOrUserListLock) {
+    public BidiMessageProtocolImpl(DataManager dataManager, ReadWriteLock logOrSendLock, ReadWriteLock registerOrLogStatLock) {
         this.dataManager = dataManager;
-        this.registerOrUserListLock = registerOrUserListLock;
+        this.registerOrLogStatLock = registerOrLogStatLock;
         this.logOrSendLock = logOrSendLock;
         this.shouldTerminate = false;
     }
@@ -82,8 +82,8 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             currentProcess = () -> postFunction((Post) msg);
         } else if (msg.getOpcode() == Message.Opcode.PM) {
             currentProcess = () -> pmFunction((PM) msg);
-        } else if (msg.getOpcode() == Message.Opcode.USERLIST) {
-            currentProcess = () -> userListFunction((UserList) msg);
+        } else if (msg.getOpcode() == Message.Opcode.LOGSTAT) {
+            currentProcess = () -> logstatFunction((LogStat) msg);
         } else if (msg.getOpcode() == Message.Opcode.BLOCK) {
             currentProcess = () -> blockFunction((Block) msg);
         } else {
@@ -99,7 +99,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      * @param registerMsg Represents a Register message to be processed.
      */
     private void registerFunction(Register registerMsg) {
-        this.registerOrUserListLock.writeLock().lock(); // Register is considered as a write event.
+        this.registerOrLogStatLock.writeLock().lock(); // Register is considered as a write event.
         if (this.dataManager.getUserByName(registerMsg.getUsername()) != null) {
             //if the user is already registered - return error message.
             this.connections.send(this.connectionID, new Error(registerMsg.getOpcode()));
@@ -107,7 +107,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             this.dataManager.registerUser(registerMsg.getUsername(), registerMsg.getPassword(), registerMsg.getYear(), registerMsg.getMonth(), registerMsg.getDay());
             this.connections.send(this.connectionID, registerMsg.generateAckMessage());
         }
-        this.registerOrUserListLock.writeLock().unlock();
+        this.registerOrLogStatLock.writeLock().unlock();
     }
 
     /**
@@ -271,19 +271,26 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
     /**
      * Is called when a user wants to get a list of all registered users. Gets it unless he isn't logged in.
      *
-     * @param userListMsg Represents a Userlist message to be processed.
+     * @param logstatMsg Represents a Logstat message to be processed.
      */
-    private void userListFunction(UserList userListMsg) {
-        this.registerOrUserListLock.readLock().lock(); // Userlist is considered as a read event.
-        User user = this.dataManager.getConnectedUser(this.connectionID);
-        if (user == null) {
-            this.connections.send(this.connectionID, new Error(userListMsg.getOpcode()));
+    private void logstatFunction(LogStat logstatMsg) {
+        this.registerOrLogStatLock.readLock().lock(); // Logstat is considered as a read event.
+        User currentUser = this.dataManager.getConnectedUser(this.connectionID);
+        if (currentUser == null) {
+            this.connections.send(this.connectionID, new Error(logstatMsg.getOpcode()));
         } else {
-            List<String> registeredUsers = this.dataManager.returnRegisteredUsers(user);
-            Message toSend = userListMsg.generateAckMessage((short) registeredUsers.size(), registeredUsers);
+            List<User> registeredUsers = this.dataManager.returnRegisteredUsers(currentUser);
+            short[] numOfPosts = new short[registeredUsers.size()];
+            int i=0;
+            for (User user: registeredUsers) {
+                numOfPosts[i] = this.dataManager.returnNumberOfPosts(user.getUserName());
+                i++;
+            }
+
+            Message toSend = logstatMsg.generateAckMessage(registeredUsers, numOfPosts);
             this.connections.send(this.connectionID, toSend);
         }
-        this.registerOrUserListLock.readLock().unlock();
+        this.registerOrLogStatLock.readLock().unlock();
     }
 
     /**
@@ -299,10 +306,11 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             //if the requesting user is not logged in OR if the user in the request does not exist --> send error
             this.connections.send(this.connectionID, new Error(statMsg.getOpcode()));
         } else {
+            short age = user.getAge();
             short numberOfPosts = this.dataManager.returnNumberOfPosts(user.getUserName());
-            short followers = (short) user.getFollowers().size();
-            short following = (short) user.getFollowing().size();
-            this.connections.send(this.connectionID, statMsg.generateAckMessage(numberOfPosts, followers, following));
+            short followers = user.getFollowersAmm();
+            short following = user.getFollowingAmm();
+            this.connections.send(this.connectionID, statMsg.generateAckMessage(age,numberOfPosts, followers, following));
         }
 
     }

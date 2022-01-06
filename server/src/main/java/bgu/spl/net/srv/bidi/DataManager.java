@@ -239,16 +239,16 @@ public class DataManager {
      *
      * @return List of Strings represents the names of all the current registered users.
      */
-    public List<String> returnRegisteredUsers(User connectedUser) {
+    public List<User> returnRegisteredUsers(User connectedUser) {
         this.userListLock.lock();
         //getting the users and sorting them by their registration order
         List<User> users = new Vector<>(this.namesToRegisteredUsers.values());
         Collections.sort(users);
-        List<String> registeredUsers = new Vector<>();
+        List<User> registeredUsers = new Vector<>();
         for (User user : users) {
             //for each user --> add its name to the output list.
             if (!connectedUser.getBlockedBy().contains(user)) {
-                registeredUsers.add(user.getUserName());
+                registeredUsers.add(user);
             }
         }
         this.userListLock.unlock();

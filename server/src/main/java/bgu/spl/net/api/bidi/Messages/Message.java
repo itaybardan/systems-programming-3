@@ -48,7 +48,7 @@ public abstract class Message {
         } else if (code == 6) {
             return Opcode.PM;
         } else if (code == 7) {
-            return Opcode.USERLIST;
+            return Opcode.LOGSTAT;
         } else if (code == 8) {
             return Opcode.STAT;
         } else if (code == 9) {
@@ -126,7 +126,7 @@ public abstract class Message {
         FOLLOW,
         POST,
         PM,
-        USERLIST,
+        LOGSTAT,
         STAT,
         NOTIFICATION,
         ACK,
@@ -146,7 +146,7 @@ public abstract class Message {
                 return 5;
             } else if (this == Opcode.PM) {
                 return 6;
-            } else if (this == Opcode.USERLIST) {
+            } else if (this == Opcode.LOGSTAT) {
                 return 7;
             } else if (this == Opcode.STAT) {
                 return 8;

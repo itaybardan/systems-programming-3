@@ -1,18 +1,19 @@
 package bgu.spl.net.api.bidi.Messages;
 
-import java.nio.charset.StandardCharsets;
+import bgu.spl.net.api.bidi.User;
+
 import java.util.List;
 
 /**
  * Message Of type USERLIST of Client-To-Server communication, when a user wants to see all the client that are registered to the server
  */
-public class UserList extends Message {
+public class LogStat extends Message {
 
     /**
      * Default Constructor.
      */
-    public UserList() {
-        this.opcode = Opcode.USERLIST;
+    public LogStat() {
+        this.opcode = Opcode.LOGSTAT;
     }
 
 
@@ -30,26 +31,39 @@ public class UserList extends Message {
     /**
      * Generate matching Ack Message to this Follow Message Message according the Message data and server protocol.
      *
-     * @param numberOfRegisteredUsers Short number represents the amount of users in the given list
      * @param users                   List of Strings represents the registered users that were found by the server
      * @return Ack message matching this Follow Message data of this message according to the server protocol.
      */
-    public Ack generateAckMessage(short numberOfRegisteredUsers, List<String> users) {
+    public Ack generateAckMessage(List<User> users, short[] numberOfPosts) {
 
-        //converting the number of of users to bytes array.
-        byte[] numOfUsersBytes = this.shortToBytes(numberOfRegisteredUsers);
-        byte[][] elements = new byte[1 + (2 * users.size())][];
-        int index = 0;
-        elements[index] = numOfUsersBytes;
-        index++;
-        for (String user : users) {
+        byte[][] elements = new byte[1+ 5 * users.size()][];
+        short numOfUsers =(short) numberOfPosts.length;
+        elements[0] = shortToBytes(numOfUsers);
+
+        int index = 1;
+        int i=0;
+
+        for (User user : users) {
             //converting each name in the list to bytes array and add it to elements.
-            byte[] currentUser = user.getBytes(StandardCharsets.UTF_8);
-            elements[index] = currentUser;
+            byte[] ageBytes = this.shortToBytes(user.getAge());
+            byte[] numberOfPostsBytes = this.shortToBytes(numberOfPosts[i]);
+            byte[] numberOfFollowersBytes = this.shortToBytes(user.getFollowersAmm());
+            byte[] numberOfFollowingBytes = this.shortToBytes(user.getFollowingAmm());
+
+            System.out.println(user.getAge() +" " + numberOfPosts[i]+" "+user.getFollowersAmm()+" "+user.getFollowingAmm());
+
+            elements[index] = ageBytes;
+            index++;
+            elements[index] = numberOfPostsBytes;
+            index++;
+            elements[index] = numberOfFollowersBytes;
+            index++;
+            elements[index] = numberOfFollowingBytes;
             index++;
             byte[] separator = {'\0'};
             elements[index] = separator;
             index++;
+            i++;
         }
         return new Ack(this.opcode, elements);
 

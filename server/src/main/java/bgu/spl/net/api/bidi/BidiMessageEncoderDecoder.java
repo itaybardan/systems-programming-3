@@ -5,7 +5,6 @@ import bgu.spl.net.api.bidi.Messages.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Vector;
 
 /**
  * Encoder and Decoder for the bidi protocol.
@@ -91,7 +90,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             this.opcodeInsertedLength++;
             initMessageContentAndLength();
             if ((this.currentOpcode == Message.Opcode.LOGOUT) ||
-                    (this.currentOpcode == Message.Opcode.USERLIST)) {
+                    (this.currentOpcode == Message.Opcode.LOGSTAT)) {
                 //The only opcodes who gets just the opcode in the command.
                 if (this.currentOpcode == Message.Opcode.LOGOUT) {
                     generalVariablesReset();
@@ -99,7 +98,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
                 } else {
                     //The opcode is LOGSTAT.
                     generalVariablesReset();
-                    return new UserList(); //TODO CHANGE INTO LOGSTAT
+                    return new LogStat(); //TODO CHANGE INTO LOGSTAT
                 }
             }
             return null;

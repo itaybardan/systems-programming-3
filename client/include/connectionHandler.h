@@ -49,6 +49,9 @@ public:
     // Close down the connection properly.
     void close();
 
+    void encodeMessage(std::string &message, short opcode);
+
+    short getOpCode(std::string inputType);
     /**
      * Part of the "translateMessage" function.
      * Translating a Ack message that was recieved from the server to string.
@@ -59,7 +62,7 @@ public:
      * @param opcode                        opcode of the message.
      * @return                  String representation of the ACK message that was recieved by the server.
      */
-    std::string translatingAckMessage(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
+    std::string getMessageAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
 
     /**
      * Part of the "translateMessage" Function.
@@ -71,12 +74,12 @@ public:
      * @param message               Vector of chars represents the message that was recieved from the server
      * @param ch_tempArray          Char array used to convert chars to short number
      */
-    void translateAckLogstat(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+    void getLogstatAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
 
-    std::string translateAckFollow(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+    std::string getFollowAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
 
     /**
-     * Part Of the "translatingAckMessage".
+     * Part Of the "getMessageAck".
      * translating the stat Ack message that was recieved from the server
      *
      * @param output                        String to return to the client screen.
@@ -85,17 +88,17 @@ public:
      * @param ch_tempArray                  Char array to translate to short numbers.
      * @return              String represents the Stat Ack message that was sent by the server
      */
-    std::string translatingAckStatMessage(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+    std::string getStatAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
 
 
     /**
-     * Part of the "translatingAckMessage".
+     * Part of the "getMessageAck".
      * Translating ack message of register,login,logout,post,pm
      * @param output                        String to return to the client screen.
      * @param opcode                        Char to use to read one char at a time from the server.
      * @return                  String representation of the Ack Message that was sent by the server.
      */
-    std::string translatingGeneralAckMessage(std::string &output, short opcode) const;
+    std::string getOtherAck(std::string &output, short opcode) const;
 
     /**
      * Part of the "translatingMessage" function.
@@ -104,7 +107,7 @@ public:
      * @param ch                    Char to use to read from the server.
      * @return              String represents the Notification Message that was sent from the server.
      */
-    std::string translatingNotificationMessage(std::string &output, char &ch);
+    std::string getNotifyAck(std::string &output, char &ch);
 
     /**
      * Part of the "translatingMessage" function.
@@ -116,11 +119,7 @@ public:
      * @param opcode                        Opcode of the message.
      * @return                 String representation of the Error message that was recieved by the server.
      */
-    std::string translatingErrorMessage(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
-
-    void encodeMessage(std::string &message, short opcode);
-
-    short getOpCode(std::string inputType);
+    std::string getErrorAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
 
     void shortToBytes(short num, char *bytesArr);
 

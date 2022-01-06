@@ -57,17 +57,19 @@ public class Stat extends Message {
      * @param numberOfFollowing short number represents the number of users following of the requested user.
      * @return Ack message matching this Stat Message data of this message according to the server protocol.
      */
-    public Ack generateAckMessage(short numberOfPosts, short numberOfFollowers, short numberOfFollowing) {
+    public Ack generateAckMessage(short age, short numberOfPosts, short numberOfFollowers, short numberOfFollowing) {
 
         //converting the number of posts, number of followers and number of following to bytes arrays.
+        byte[] ageBytes = this.shortToBytes(age);
         byte[] numberOfPostsBytes = this.shortToBytes(numberOfPosts);
         byte[] numberOfFollowersBytes = this.shortToBytes(numberOfFollowers);
         byte[] numberOfFollowingBytes = this.shortToBytes(numberOfFollowing);
-        byte[][] elements = new byte[3][];
+        byte[][] elements = new byte[4][];
         //inserting all the array to the elements 2-D array of bytes
-        elements[0] = numberOfPostsBytes;
-        elements[1] = numberOfFollowersBytes;
-        elements[2] = numberOfFollowingBytes;
+        elements[0] = ageBytes;
+        elements[1] = numberOfPostsBytes;
+        elements[2] = numberOfFollowersBytes;
+        elements[3] = numberOfFollowingBytes;
         return new Ack(this.opcode, elements);
 
     }

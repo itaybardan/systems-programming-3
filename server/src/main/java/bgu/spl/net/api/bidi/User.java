@@ -103,6 +103,8 @@ public class User implements Comparable<User> {
         return password;
     }
 
+    public short getAge() { return age;}
+
     /**
      * Return a copy of the current users this user is following
      *
@@ -111,6 +113,10 @@ public class User implements Comparable<User> {
     public Set<User> getFollowing() {
         return new HashSet<>(following);
     }
+
+    public short getFollowingAmm() {return (short) following.size();}
+
+    public short getFollowersAmm() {return (short) followers.size();}
 
     /**
      * Return a copy of the current users that follows this user.
