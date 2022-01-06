@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * Message Of type STAT of Client-To-Server communication, when a user wants to check the Status of a certain user.
  */
-public class Stat extends Message {
+public class  Stat extends Message {
 
     //region Fields
     /**
