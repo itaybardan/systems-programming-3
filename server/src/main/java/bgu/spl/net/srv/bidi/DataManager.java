@@ -5,9 +5,8 @@ import bgu.spl.net.api.bidi.Messages.Message;
 import bgu.spl.net.api.bidi.Messages.Notification;
 import bgu.spl.net.api.bidi.User;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Vector;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -25,6 +24,9 @@ public class DataManager {
      * Atomic Integer represent the number of users that are currently registered to the Server.
      */
     private AtomicInteger numberOfUsers;
+    private final short YEAR;
+    private final short MONTH;
+    private final short DAY;
 
     /**
      * ConcurrentHashMap from String keys(UserNames) to User Objects,
@@ -74,6 +76,10 @@ public class DataManager {
      * Default Constructor
      */
     public DataManager() {
+        LocalDateTime now = LocalDateTime.now();
+        this.YEAR =(short) now.getYear();
+        this.MONTH =(short) now.getMonth().getValue();
+        this.DAY =(short) now.getDayOfMonth();
         this.namesToRegisteredUsers = new ConcurrentHashMap<>();
         this.namesToLoginUsers = new ConcurrentHashMap<>();
         this.sendOrLogLock = new ReentrantReadWriteLock(true);
@@ -84,6 +90,7 @@ public class DataManager {
         this.registerLock = this.registerOrUserListLock.writeLock();
         this.numberOfUsers = new AtomicInteger(0);
         this.messageHistory = new Vector<>();
+
     }
 
     /**
@@ -103,12 +110,15 @@ public class DataManager {
      * @param userName String represents the new user Name.
      * @param password String represents the new user password.
      */
-    public void registerUser(String userName, String password) {
-        //making sure no one try to register at the same time or use the UserList function at the same time.
+    public void registerUser(String userName, String password, short birthYear, short birthMonth, short birthDay) {
         this.registerLock.lock();
         int userNumber = this.generateUserNumber();
+
         //create new user with the given details and add it to the data base.
-        User newUser = new User(userName, password, userNumber);
+        short userAge = (short) (this.YEAR - birthYear);
+        if(birthMonth > this.MONTH || (birthMonth== this.MONTH && birthDay > this.DAY)) userAge--;
+        User newUser = new User(userName, password, userNumber, userAge);
+
         this.namesToRegisteredUsers.put(userName, newUser);
         this.registerLock.unlock();
     }

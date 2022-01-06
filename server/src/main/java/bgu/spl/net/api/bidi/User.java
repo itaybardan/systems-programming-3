@@ -21,7 +21,7 @@ public class User implements Comparable<User> {
     /**
      * Integer represents the unique id of this user. used to sort users by their registration order.
      */
-    private int userNum;
+    private final int userId;
 
     /**
      * Integer represents the Connection Id of the connection handler that this user is currently connected to.
@@ -31,22 +31,24 @@ public class User implements Comparable<User> {
     /**
      * String represent this User Name
      */
-    private String userName;
+    private final String userName;
 
     /**
      * String represents this User Password.
      */
-    private String password;
+    private final String password;
+
+    private short age;
 
     /**
      * Set Of User Objects represents the Users this User is Following after.
      */
-    private Set<User> following;
+    private final Set<User> following;
 
     /**
      * Set Of User Objects represent the Users that follows this user.
      */
-    private Set<User> followers;
+    private final Set<User> followers;
 
     /**
      * Boolean represent whether this user is connected or not.
@@ -57,9 +59,9 @@ public class User implements Comparable<User> {
      * Queue of Message Objects represents the Messages that was sent to this user when he\she was logged out.
      * those messages will be sent to him\her in the next login.
      */
-    private ConcurrentLinkedQueue<Message> waitingMessages;
+    private final ConcurrentLinkedQueue<Message> waitingMessages;
 
-    private Set<User> blockedBy;
+    private final Set<User> blockedBy;
 
     //endregion Fields
 
@@ -70,16 +72,18 @@ public class User implements Comparable<User> {
      * @param password String represents this user Password.
      * @param userNum  Integer represents the unique id of this user.
      */
-    public User(String userName, String password, int userNum) {
+    public User(String userName, String password, int userNum, short age) {
         this.connId = DISCONNECTED_ID;
         this.userName = userName;
         this.password = password;
+        this.age = age;
         this.isConnected = false;
         this.following = new HashSet<>();
         this.followers = new HashSet<>();
         this.waitingMessages = new ConcurrentLinkedQueue<>();
-        this.userNum = userNum;
+        this.userId = userNum;
         this.blockedBy = new HashSet<>();
+
     }
 
     //region Getters
@@ -87,8 +91,8 @@ public class User implements Comparable<User> {
         return connId;
     }
 
-    public int getUserNum() {
-        return userNum;
+    public int getUserId() {
+        return userId;
     }
 
     public String getUserName() {
@@ -200,7 +204,7 @@ public class User implements Comparable<User> {
      */
     @Override
     public int compareTo(User user) {
-        return Integer.compare(this.userNum, user.userNum);
+        return Integer.compare(this.userId, user.userId);
     }
 
 }

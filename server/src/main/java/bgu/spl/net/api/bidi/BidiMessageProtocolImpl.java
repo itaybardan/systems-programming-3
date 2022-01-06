@@ -104,7 +104,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             //if the user is already registered - return error message.
             this.connections.send(this.connectionID, new Error(registerMsg.getOpcode()));
         } else {
-            this.dataManager.registerUser(registerMsg.getUsername(), registerMsg.getPassword());
+            this.dataManager.registerUser(registerMsg.getUsername(), registerMsg.getPassword(), registerMsg.getYear(), registerMsg.getMonth(), registerMsg.getDay());
             this.connections.send(this.connectionID, registerMsg.generateAckMessage());
         }
         this.registerOrUserListLock.writeLock().unlock();

@@ -97,9 +97,9 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
                     generalVariablesReset();
                     return new Logout();
                 } else {
-                    //The opcode is USERLIST.
+                    //The opcode is LOGSTAT.
                     generalVariablesReset();
-                    return new UserList();
+                    return new UserList(); //TODO CHANGE INTO LOGSTAT
                 }
             }
             return null;
@@ -118,9 +118,9 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingMessage(byte nextByte) {
         Message output;
         if (this.currentOpcode == Message.Opcode.REGISTER) {
-            output = readingRegisterOrLoginMessage(Message.Opcode.REGISTER, nextByte);
+            output = readingRegisterMessage(nextByte);
         } else if (this.currentOpcode == Message.Opcode.LOGIN) {
-            output = readingRegisterOrLoginMessage(Message.Opcode.LOGIN, nextByte);
+            output = readingLoginMessage(nextByte);
         } else if (this.currentOpcode == Message.Opcode.FOLLOW) {
             output = readingFollowMessage(nextByte);
         } else if (this.currentOpcode == Message.Opcode.POST) {
@@ -273,7 +273,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
      * @return Message which is a Follow message.
      */
     private Message generateFollowMessage() {
-        Message output;//collected all the necessary users --> convert them to string and generate a FollowMessage
+        Message output;
         checkReduceField2();
 
         byte[] userByte = Arrays.copyOfRange(field2, 0, field2Index-1);
@@ -283,13 +283,75 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     }
 
     /**
-     * Reading bytes and inserting them to the fields according to the specifications for "REGISTER" and "LOGIN" commands.
+     * Reading bytes and inserting them to the fields according to the specifications for "REGISTER" commands.
      *
-     * @param outputOpcode Represents the current opcode of the command.
      * @param nextByte     Represents the next byte to be translated.
      * @return Message represents the decoded message, or null if not done reading the message.
      */
-    private Message readingRegisterOrLoginMessage(Message.Opcode outputOpcode, byte nextByte) {
+    private Message readingRegisterMessage(byte nextByte) {
+        //Field1 = username/0password | Field2 = birth date
+        if (this.zeroCounter <= 1) {
+            //The next byte going to be to the userName or passName
+            if (nextByte == '\0') {
+                this.zeroCounter++;
+                     if( this.zeroCounter == 2) {
+                         checkReduceField1();
+                         return null;
+                     }
+
+            }
+            insertByteToField1(nextByte);
+            return null;
+        } else {
+            //The next byte is going to be to the date.
+            if (nextByte == '\0') {
+                checkReduceField2();
+                //Creating the Register or Login Message
+                return generateRegisterMessage();
+            }
+            insertByteToField2((byte) (nextByte- 48));
+            return null;
+        }
+    }
+
+    /**
+     * Generating "Register"  messages according to the current opcode, by translating the arrays of bytes
+     * to strings.
+     *
+     * @return Message which is a Register message.
+     */
+
+    private Message generateRegisterMessage() { //TODO separate into register.
+        Message output;
+        int separator=0;
+        for (int i = 0; i < field1Index; i++) {
+            if (field1[i] == '\0') {
+                separator = i;
+                break;
+            }
+        }
+
+        String username = new String(Arrays.copyOfRange(field1, 0, separator), StandardCharsets.UTF_8);
+        String password = new String(Arrays.copyOfRange(field1, separator+1, field1Index), StandardCharsets.UTF_8);
+
+        //init date
+        short day =(short) (field2[0]*10 + field2[1]);
+        short month =(short) (field2[3] * 10 + field2[4]);
+        short year =(short) (field2[6]*1000 + field2[7]*100 + field2[8]*10 + field2[9]);
+
+        output = new Register(username, password, year, month, day);
+
+        generalVariablesReset();
+        return output;
+    }
+
+    /**
+     * Reading bytes and inserting them to the fields according to the specifications for "Login" commands.
+     *
+     * @param nextByte     Represents the next byte to be translated.
+     * @return Message represents the decoded message, or null if not done reading the message.
+     */
+    private Message readingLoginMessage(byte nextByte) { //TODO implement
         //Field1 = username | Field2 = password
         if (this.zeroCounter == 0) {
             //The next byte going to be to the userName
@@ -306,30 +368,28 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             if (nextByte == '\0') {
                 checkReduceField2();
                 //Creating the Register or Login Message
-                return generateRegisterOrLoginMessage(outputOpcode);
+                return generateLoginMessage();
             }
             insertByteToField2(nextByte);
             return null;
         }
+
     }
 
     /**
-     * Generating "Register" or "Login" messages according to the current opcode, by translating the arrays of bytes
+     * Generating "Login"  messages according to the current opcode, by translating the arrays of bytes
      * to strings.
      *
-     * @param outputOpcode Represents the current opcode of the command.
-     * @return Message which is a Register or Login message.
+     * @return Message which is a Login message.
      */
-    private Message generateRegisterOrLoginMessage(Message.Opcode outputOpcode) {
+
+    private Message generateLoginMessage() { //TODO implement
         Message output;
         String username = new String(this.field1, StandardCharsets.UTF_8);
         String password = new String(this.field2, StandardCharsets.UTF_8);
-        if (outputOpcode == Message.Opcode.REGISTER) {
-            output = new Register(username, password);
-        } else {
-            //The opcode is login.
-            output = new Login(username, password);
-        }
+
+        output = new Login(username, password);
+
         generalVariablesReset();
         return output;
     }
@@ -438,5 +498,12 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     @Override
     public byte[] encode(Message message) {
         return message.convertMessageToBytes();
+    }
+
+    public short bytesToShort(byte[] byteArr)
+    {
+        short result = (short)((byteArr[0] & 0xff) << 8);
+        result += (short)(byteArr[1] & 0xff);
+        return result;
     }
 }
