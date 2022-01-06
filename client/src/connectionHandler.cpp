@@ -119,6 +119,7 @@ void ConnectionHandler::encodeMessage(std::string &message, short opcode){
         case(7): message.clear();
             break;
         case(8): std::replace(message.begin(), message.end() , ' ', '|');
+            message = message + '|';
             break;
         case(12): std::replace(message.begin(), message.end(), ' ', '\0');
             break;
@@ -243,7 +244,8 @@ string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &
         return output;
     }
     else if(opcode == 8){
-        return getStatAck(output, ch, message, ch_tempArray);
+        getStatAck(output, ch, message, ch_tempArray);
+        return output;
     }
     else{
      //in case it's one of the following: 1.Register | 2.Login | 3.Logout | 4.Post | 5.Pm
@@ -275,46 +277,36 @@ string ConnectionHandler::getFollowAck(string &output, char &ch, vector<char> &m
  * @param ch_tempArray                  Char array to translate to short numbers.
  * @return              String represents the Stat Ack message that was sent by the server
  */
-string ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
-    output.append("ACK 8 ");
-    //getting the next two bytes --> age of user
+void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
+    //adding the ack with matching opcode
+    output.append("ACK ");
+    output.append("7 ");
+
+    //getting the next two bytes to see how many names to read
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
     }
     ch_tempArray[0] = message[4];
     ch_tempArray[1] = message[5];
-    output.append(std::to_string(bytesToShort(ch_tempArray)));
-    output.append(" ");
-    //getting the next two bytes --> number of posts
-    for(int i = 0; i < 2; i++){
-        getBytes(&ch, 1);
-        message.push_back(ch);
-    }
-    ch_tempArray[0] = message[6];
-    ch_tempArray[1] = message[7];
-    output.append(std::to_string(bytesToShort(ch_tempArray)));
-    output.append(" ");
-    //getting the next two bytes --> number of followers
-    for(int i = 0; i < 2; i++){
-        getBytes(&ch, 1);
-        message.push_back(ch);
-    }
-    ch_tempArray[0] = message[8];
-    ch_tempArray[1] = message[9];
-    output.append(std::to_string(bytesToShort(ch_tempArray)));
-    output.append(" ");
-    //getting the next two bytes --> number of following
-    for(int i = 0; i < 2; i++){
-        getBytes(&ch, 1);
-        message.push_back(ch);
-    }
-    ch_tempArray[0] = message[10];
-    ch_tempArray[1] = message[11];
-    output.append(std::to_string(bytesToShort(ch_tempArray)));
+    short numberOfUsers = bytesToShort(ch_tempArray);
+
+    char* numberToProcess= new char[2];
+    for(int i = 0; i < numberOfUsers; i++){
+        output.append(" ");
+        //adding each user's stat to the string
 
 
-    return output;
+        string currentName;
+        for (int j = 0; j < 4; ++j) {
+            getBytes(numberToProcess, 2);
+            short num = bytesToShort(numberToProcess);
+            currentName = currentName + std::to_string(num) + " ";
+        }
+        output.append(currentName);
+        getBytes(ch_tempArray, 1);
+    }
+    delete[] numberToProcess;
 }
 
 /**
@@ -330,8 +322,7 @@ string ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &mes
 void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &message,
                                       char *ch_tempArray) {
     //adding the ack with matching opcode
-    output.append("ACK ");
-    output.append("7 ");
+    output.append("ACK 7");
 
     //getting the next two bytes to see how many names to read
     for(int i = 0; i < 2; i++){
@@ -341,8 +332,6 @@ void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &me
     ch_tempArray[0] = message[4];
     ch_tempArray[1] = message[5];
     short numberOfUsers = bytesToShort(ch_tempArray);
-    //adding number of users
-    output.append(std::to_string(numberOfUsers));
 
     char* numberToProcess= new char[2];
     for(int i = 0; i < numberOfUsers; i++){

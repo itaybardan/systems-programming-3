@@ -50,8 +50,6 @@ public class LogStat extends Message {
             byte[] numberOfFollowersBytes = this.shortToBytes(user.getFollowersAmm());
             byte[] numberOfFollowingBytes = this.shortToBytes(user.getFollowingAmm());
 
-            System.out.println(user.getAge() +" " + numberOfPosts[i]+" "+user.getFollowersAmm()+" "+user.getFollowingAmm());
-
             elements[index] = ageBytes;
             index++;
             elements[index] = numberOfPostsBytes;

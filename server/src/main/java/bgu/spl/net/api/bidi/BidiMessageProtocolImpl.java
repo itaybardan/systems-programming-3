@@ -287,8 +287,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
                 i++;
             }
 
-            Message toSend = logstatMsg.generateAckMessage(registeredUsers, numOfPosts);
-            this.connections.send(this.connectionID, toSend);
+            this.connections.send(this.connectionID, logstatMsg.generateAckMessage(registeredUsers, numOfPosts));
         }
         this.registerOrLogStatLock.readLock().unlock();
     }
@@ -301,16 +300,30 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
     private void statFunction(Stat statMsg) {
         User currentClient = this.dataManager.getConnectedUser(this.connectionID);
-        User user = this.dataManager.getUserByName(statMsg.getUsername());
-        if ((user == null) || (currentClient == null) || currentClient.getBlockedBy().contains(user)) {
+        if (currentClient != null){
+
+            String[] users = statMsg.getUsers();
+            int size = users.length;
+            short[] ages = new short[size];
+            short[]numberOfPosts = new short[size];
+            short[]followers = new short[size];
+            short[]following= new short[size];
+            for(int i=0;i < size; i++) {
+                User user = this.dataManager.getUserByName(users[i]);
+                if(user == null) {
+                    this.connections.send(this.connectionID, new Error(statMsg.getOpcode()));
+                }
+                ages[i] = user.getAge();
+                numberOfPosts[i] = this.dataManager.returnNumberOfPosts(user.getUserName());
+                followers[i] = user.getFollowersAmm();
+                following[i] = user.getFollowingAmm();
+
+            }
+            this.connections.send(this.connectionID, statMsg.generateAckMessage(size, ages,numberOfPosts, followers, following));
+
+        } else {
             //if the requesting user is not logged in OR if the user in the request does not exist --> send error
             this.connections.send(this.connectionID, new Error(statMsg.getOpcode()));
-        } else {
-            short age = user.getAge();
-            short numberOfPosts = this.dataManager.returnNumberOfPosts(user.getUserName());
-            short followers = user.getFollowersAmm();
-            short following = user.getFollowingAmm();
-            this.connections.send(this.connectionID, statMsg.generateAckMessage(age,numberOfPosts, followers, following));
         }
 
     }

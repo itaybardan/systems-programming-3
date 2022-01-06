@@ -64,6 +64,7 @@ public:
      */
     std::string getMessageAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
 
+    std::string getFollowAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
     /**
      * Part of the "translateMessage" Function.
      * converting the incoming message from the server to a string to display to the user,
@@ -76,7 +77,7 @@ public:
      */
     void getLogstatAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
 
-    std::string getFollowAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+
 
     /**
      * Part Of the "getMessageAck".
@@ -86,9 +87,8 @@ public:
      * @param ch                            Char to use to read one char at a time from the server.
      * @param message                       Vector of chars represent the chars that were read from the server so far.
      * @param ch_tempArray                  Char array to translate to short numbers.
-     * @return              String represents the Stat Ack message that was sent by the server
      */
-    std::string getStatAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+    void getStatAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
 
 
     /**
