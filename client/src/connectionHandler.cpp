@@ -112,14 +112,11 @@ void ConnectionHandler::encodeMessage(std::string &message, short opcode){
             break;
         case(4):
             break;
-        case(6): {
-            std::replace(message.begin(), message.end(), ' ', '\0');
+        case(6):std::replace(message.begin(), message.end(), ' ', '\0');
             break;
-        }
         case(7): message.clear();
             break;
-        case(8): std::replace(message.begin(), message.end() , ' ', '|');
-            message = message + '|';
+        case(8):message = message + '|';
             break;
         case(12): std::replace(message.begin(), message.end(), ' ', '\0');
             break;
