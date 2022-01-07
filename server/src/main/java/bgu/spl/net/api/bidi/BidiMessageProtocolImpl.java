@@ -313,6 +313,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
                 User user = this.dataManager.getUserByName(users[i]);
                 if(user == null) {
                     this.connections.send(this.connectionID, new Error(statMsg.getOpcode()));
+                    return;
                 }
                 if(!currentClient.isBlockedBy(user)) {
                     ages[legalSize] = user.getAge();
