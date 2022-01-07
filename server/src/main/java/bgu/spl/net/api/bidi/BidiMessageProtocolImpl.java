@@ -308,18 +308,22 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             short[]numberOfPosts = new short[size];
             short[]followers = new short[size];
             short[]following= new short[size];
+
+            int legalSize=0;
             for(int i=0;i < size; i++) {
                 User user = this.dataManager.getUserByName(users[i]);
                 if(user == null) {
                     this.connections.send(this.connectionID, new Error(statMsg.getOpcode()));
                 }
-                ages[i] = user.getAge();
-                numberOfPosts[i] = this.dataManager.returnNumberOfPosts(user.getUserName());
-                followers[i] = user.getFollowersAmm();
-                following[i] = user.getFollowingAmm();
-
+                if(!currentClient.isBlockedBy(user)) {
+                    ages[legalSize] = user.getAge();
+                    numberOfPosts[legalSize] = this.dataManager.returnNumberOfPosts(user.getUserName());
+                    followers[legalSize] = user.getFollowersAmm();
+                    following[legalSize] = user.getFollowingAmm();
+                    legalSize++;
+                }
             }
-            this.connections.send(this.connectionID, statMsg.generateAckMessage(size, ages,numberOfPosts, followers, following));
+            this.connections.send(this.connectionID, statMsg.generateAckMessage(legalSize, ages,numberOfPosts, followers, following));
 
         } else {
             //if the requesting user is not logged in OR if the user in the request does not exist --> send error

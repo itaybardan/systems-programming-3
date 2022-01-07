@@ -24,7 +24,7 @@ public class LogStat extends Message {
      */
     @Override
     public byte[] convertMessageToBytes() {
-        return new byte[0];
+        return null;
     }
 
 

@@ -182,6 +182,10 @@ public class User implements Comparable<User> {
         this.blockedBy.add(user);
     }
 
+    public Boolean isBlockedBy(User user){
+        return this.blockedBy.contains(user);
+    }
+
     /**
      * updating fields of this user after logging out.
      */

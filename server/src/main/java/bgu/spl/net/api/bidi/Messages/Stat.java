@@ -1,7 +1,5 @@
 package bgu.spl.net.api.bidi.Messages;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * Message Of type STAT of Client-To-Server communication, when a user wants to check the Status of certain users.
  */
@@ -49,17 +47,7 @@ public class Stat extends Message {
      */
     @Override
     public byte[] convertMessageToBytes() {
-//        //converting the opcode and username to bytes arrays
-//        byte[] opcode = this.shortToBytes(this.opcode.getCode());
-//        byte[] userNameBytes = this.users[0].getBytes(StandardCharsets.UTF_8);
-//        byte[] output = new byte[opcode.length + userNameBytes.length + 1];
-//        int index = 0;
-//        //inserting all the data of this message to a single byte array to return.
-//        index = insertArray(opcode, output, index);
-//        index = insertArray(userNameBytes, output, index);
-//        output[index] = '\0';
-//        System.out.println("here");
-        return new byte[0];
+        return null;
     }
 
     /**
