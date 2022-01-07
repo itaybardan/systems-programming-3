@@ -11,6 +11,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class TPCMain {
     public static void main(String[] args) {
+        if(args[0] == null){
+            System.out.println("Please enter legal port number");
+            return;
+        }
+
+        int port = Integer.parseInt(args[0]);
         //DataBase to hold all the messages and users of the BGSServer.
         DataManager dataManager = new DataManager();
         //ReadWriteLocks to synchronize different part of the functions in the DataManager
@@ -18,7 +24,7 @@ public class TPCMain {
         ReadWriteLock registerOrUserList = new ReentrantReadWriteLock(true);
         //creating and activating the Tread-Per-Client Server
         Server<Message> threadPerClientServer = Server.threadPerClient(
-                9090,
+                port,
                 () -> new BidiMessageProtocolImpl(dataManager, logOrSendLock, registerOrUserList),
                 BidiMessageEncoderDecoder::new);
 

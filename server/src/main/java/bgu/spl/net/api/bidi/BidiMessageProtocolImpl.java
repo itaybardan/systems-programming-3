@@ -84,11 +84,10 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             currentProcess = () -> pmFunction((PM) msg);
         } else if (msg.getOpcode() == Message.Opcode.LOGSTAT) {
             currentProcess = () -> logstatFunction((LogStat) msg);
-        } else if (msg.getOpcode() == Message.Opcode.BLOCK) {
-            currentProcess = () -> blockFunction((Block) msg);
-        } else {
-            //stat message
+        } else if (msg.getOpcode() == Message.Opcode.STAT) {
             currentProcess = () -> statFunction((Stat) msg);
+        } else {
+            currentProcess = () -> blockFunction((Block) msg);
         }
         currentProcess.run();
     }
