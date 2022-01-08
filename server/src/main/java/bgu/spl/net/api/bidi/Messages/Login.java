@@ -2,33 +2,25 @@ package bgu.spl.net.api.bidi.Messages;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * Message Of type LOGIN of Client-To-Server communication, when a user wants to login to the server.
- */
-public class Login extends Message {
 
-    //region Fields
-    /**
-     * String represents the username who requested to login.
-     */
+public class Login extends Message {
     private String username;
 
-    /**
-     * String represents the password of the user who requested to login.
-     */
     private String password;
-    //endregion Fields
+
+    public final char captcha;
 
     /**
      * Default Constructor.
-     *
-     * @param username String represents the username who requested to login.
+     *  @param username String represents the username who requested to login.
      * @param password String represents the password of the user who requested to login.
+     * @param captcha Char represents the value of the captcha
      */
-    public Login(String username, String password) {
+    public Login(String username, String password, char captcha) {
         this.opcode = Opcode.LOGIN;
         this.username = username;
         this.password = password;
+        this.captcha = captcha;
     }
 
     //region Getters

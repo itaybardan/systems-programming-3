@@ -117,7 +117,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
     private void loginFunction(Login loginMsg) {
         this.logOrSendLock.writeLock().lock(); // Login is considered as a write event.
         User checkIfAlreadyConnected = this.dataManager.getConnectedUser(this.connectionID);
-        if (checkIfAlreadyConnected != null) {
+        if (checkIfAlreadyConnected != null || loginMsg.captcha == '0') {
             this.connections.send(this.connectionID, new Error(loginMsg.getOpcode()));
         } else {
             User toCheck = this.dataManager.getUserByName(loginMsg.getUsername());

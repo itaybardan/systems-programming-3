@@ -104,8 +104,7 @@ bool ConnectionHandler::sendLine(std::string& line) { //TODO CHANGE JAVA CODE TO
 
 void ConnectionHandler::encodeMessage(std::string &message, short opcode){
     switch(opcode){
-        case(1): std::replace(message.begin(), message.end() , ' ', '\0');
-            break;
+        case(1):
         case(2): std::replace(message.begin(), message.end() , ' ', '\0');
             break;
         case(3): message.clear();
@@ -213,16 +212,6 @@ bool ConnectionHandler::getLine(std::string &output) {
     return true;
 }
 
-/**
- * Part of the "translateMessage" function.
- * Translating a Ack message that was received from the server to string.
- * @param output                        String to return to the client screen.
- * @param ch                            Char to use to read one char at a time from the server.
- * @param message                       Vector of chars represent the chars that were read from the server so far.
- * @param ch_tempArray                  Char array to translate to short numbers.
- * @param opcode                        opcode of the message.
- * @return                  String representation of the ACK message that was received by the server.
- */
 string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &message, char *ch_tempArray,
                                         short opcode) {
     for(int i = 0; i < 2; i++){
@@ -234,7 +223,7 @@ string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &
     ch_tempArray[1] = message[3];
     opcode = bytesToShort(ch_tempArray);
     if(opcode == 4){
-        return getFollowAck(output, ch, message, ch_tempArray);;
+        return getFollowAck(output, ch, message);;
     }
     else if(opcode ==7){
         getLogstatAck(output, ch, message, ch_tempArray);
@@ -245,17 +234,15 @@ string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &
         return output;
     }
     else{
-     //in case it's one of the following: 1.Register | 2.Login | 3.Logout | 4.Post | 5.Pm
+     //for Register, Login, Logout, Post, Pm
     return getOtherAck(output, opcode);
     }
 }
 
-string ConnectionHandler::getFollowAck(string &output, char &ch, vector<char> &message,
-                                       char *ch_tempArray){
+string ConnectionHandler::getFollowAck(string &output, char &ch, vector<char> &message){
     output.append("ACK ");
     output.append("4 ");
 
-    //getting the next two bytes to see how many names to read
 
     string loggedIn;
     getFrameAscii(loggedIn, '\0');
@@ -263,17 +250,37 @@ string ConnectionHandler::getFollowAck(string &output, char &ch, vector<char> &m
     return output;
     }
 
+void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &message,char *ch_tempArray) {
+    //adding the ack with matching opcode
+    output.append("ACK 7");
 
-/**
- * Part Of the "getMessageAck".
- * translating the stat Ack message that was recieved from the server
- *
- * @param output                        String to return to the client screen.
- * @param ch                            Char to use to read one char at a time from the server.
- * @param message                       Vector of chars represent the chars that were read from the server so far.
- * @param ch_tempArray                  Char array to translate to short numbers.
- * @return              String represents the Stat Ack message that was sent by the server
- */
+    //getting the next two bytes to see how many names to read
+    for(int i = 0; i < 2; i++){
+        getBytes(&ch, 1);
+        message.push_back(ch);
+    }
+    ch_tempArray[0] = message[4];
+    ch_tempArray[1] = message[5];
+    short numberOfUsers = bytesToShort(ch_tempArray);
+
+    char* numberToProcess= new char[2];
+    for(int i = 0; i < numberOfUsers; i++){
+        output.append(" ");
+        //adding each user's stat to the string
+
+
+        string currentName;
+        for (int j = 0; j < 4; ++j) {
+            getBytes(numberToProcess, 2);
+            short num = bytesToShort(numberToProcess);
+            currentName = currentName + std::to_string(num) + " ";
+        }
+        output.append(currentName);
+        getBytes(ch_tempArray, 1);
+    }
+    delete[] numberToProcess;
+}
+
 void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
     //adding the ack with matching opcode
     output.append("ACK ");
@@ -306,93 +313,12 @@ void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &messa
     delete[] numberToProcess;
 }
 
-/**
- * Part of the "translateMessage" Function.
- * converting the incoming message from the server to a string to display to the user,
- * when the message is ACK logstat.
- *
- * @param output                String to return to the client screen
- * @param ch                    Char to read each byte
- * @param message               Vector of chars represents the message that was received from the server
- * @param ch_tempArray          Char array used to convert chars to short number
- */
-void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &message,
-                                      char *ch_tempArray) {
-    //adding the ack with matching opcode
-    output.append("ACK 7");
-
-    //getting the next two bytes to see how many names to read
-    for(int i = 0; i < 2; i++){
-        getBytes(&ch, 1);
-        message.push_back(ch);
-    }
-    ch_tempArray[0] = message[4];
-    ch_tempArray[1] = message[5];
-    short numberOfUsers = bytesToShort(ch_tempArray);
-
-    char* numberToProcess= new char[2];
-    for(int i = 0; i < numberOfUsers; i++){
-        output.append(" ");
-        //adding each user's stat to the string
-
-
-        string currentName;
-        for (int j = 0; j < 4; ++j) {
-            getBytes(numberToProcess, 2);
-            short num = bytesToShort(numberToProcess);
-            currentName = currentName + std::to_string(num) + " ";
-        }
-        output.append(currentName);
-        getBytes(ch_tempArray, 1);
-    }
-    delete[] numberToProcess;
-}
-
-/**
- * Part of the "getMessageAck".
- * Translating ack message of register,login,logout,post,pm
- * @param output                        String to return to the client screen.
- * @param opcode                        Char to use to read one char at a time from the server.
- * @return                  String representation of the Ack Message that was sent by the server.
- */
 string ConnectionHandler::getOtherAck(string &output, short opcode) const {
     output.append("ACK ");
     output.append(std::to_string(opcode));
     return output;
 }
 
-/**
- * Part of the "translatingMessage" function.
- * translating a Error Message that was received by the server to string
- * @param output                        String to return to the client screen.
- * @param ch                            Char to use to read one char at a time from the server.
- * @param message                       Vector of chars represent the chars that were read from the server so far.
- * @param ch_tempArray                  Char array to translate to short numbers.
- * @param opcode                        Opcode of the message.
- * @return                 String representation of the Error message that was received by the server.
- */
-string ConnectionHandler::getErrorAck(string &output, char &ch, vector<char> &message, char *ch_tempArray,
-                                      short opcode) {
-    output.append("ERROR ");
-    for(int i = 0; i < 2; i++){
-            getBytes(&ch, 1);
-            message.push_back(ch);
-        }
-    //getting resolved opcode
-    ch_tempArray[0] = message[2];
-    ch_tempArray[1] = message[3];
-    opcode = bytesToShort(ch_tempArray);
-    output.append(std::to_string(opcode));
-    return output;
-}
-
-/**
- * Part of the "translatingMessage" function.
- * translating a notification message from the server to String
- * @param output                String representation of the message that was received by the server
- * @param ch                    Char to use to read from the server.
- * @return              String represents the Notification Message that was sent from the server.
- */
 string ConnectionHandler::getNotifyAck(string &output, char &ch) {
     output.append("NOTIFICATION ");
     getBytes(&ch, 1);
@@ -407,5 +333,20 @@ string ConnectionHandler::getNotifyAck(string &output, char &ch) {
     getFrameAscii(content, '\0');
     //adding the content of the notification
     output.append(content.substr(0,content.length()-1));
+    return output;
+}
+
+string ConnectionHandler::getErrorAck(string &output, char &ch, vector<char> &message, char *ch_tempArray,
+                                      short opcode) {
+    output.append("ERROR ");
+    for(int i = 0; i < 2; i++){
+        getBytes(&ch, 1);
+        message.push_back(ch);
+    }
+    //getting resolved opcode
+    ch_tempArray[0] = message[2];
+    ch_tempArray[1] = message[3];
+    opcode = bytesToShort(ch_tempArray);
+    output.append(std::to_string(opcode));
     return output;
 }
