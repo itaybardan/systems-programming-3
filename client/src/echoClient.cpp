@@ -1,45 +1,51 @@
 #include <iostream>
 #include <stdlib.h>
 #include <thread>
+#include <condition_variable>
 #include "../include/connectionHandler.h"
 #include <boost/algorithm/string.hpp>
 
 
-std::mutex readLock;
+
+
 std::condition_variable condition;
+
 
 class KeyboardReader {
 
-    private: ConnectionHandler *handler;
-             bool &terminate;
-    public: KeyboardReader(ConnectionHandler* _handler, bool &_terminate):handler(_handler), terminate(_terminate){};
 
-            //T2
-            void run() {
-                 while (!terminate) {
-                    std::string input;
-                     std::getline(std::cin, input);
-                     if (input == "LOGOUT") {
-                         logoutCheck(input);
-                     }
 
-                     else if (!handler->sendLine(input)) {
-                           std::cout << "Disconnected. Exiting...\n" << std::endl;
-                           terminate=true;
-                     }
-                 }
+private: ConnectionHandler *handler;
+    bool &terminate;
+    std::mutex& readLock;
+public: KeyboardReader(ConnectionHandler* _handler, bool &_terminate, std::mutex& _readLock):handler(_handler), terminate(_terminate), readLock(_readLock){};
 
-                std::cout << "T2 end" << std::endl;
+    //T2
+    void run() {
+        while (!terminate) {
+            std::string input;
+            std::getline(std::cin, input);
+            if (input == "LOGOUT") {
+                logoutCheck(input);
             }
-            void logoutCheck(std::string input){
-                std::unique_lock <std::mutex> lock(readLock);
-                if (!handler->sendLine(input)) {
-                    std::cout << "Disconnected. Exiting...\n" << std::endl;
-                    terminate=true;
-                    return;
-                }
-                condition.wait(lock); //waits for update from the main thread
+
+            else if (!handler->sendLine(input)) {
+                std::cout << "Disconnected. Exiting...\n" << std::endl;
+                terminate=true;
             }
+        }
+
+        std::cout << "T2 end" << std::endl;
+    }
+    void logoutCheck(std::string input){
+        std::unique_lock <std::mutex> lock(readLock);
+        if (!handler->sendLine(input)) {
+            std::cout << "Disconnected. Exiting...\n" << std::endl;
+            terminate=true;
+            return;
+        }
+        condition.wait(lock); //waits for update from the main thread
+    }
 };
 
 
@@ -57,9 +63,9 @@ int main(int argc, char *argv[]) {
         std::cerr << "Cannot connect to " << host << ":" << port << std::endl;
         return 1;
     }
-
+    std::mutex readLock;
     bool terminate = false;
-    KeyboardReader reader(&connectionHandler, terminate);
+    KeyboardReader reader(&connectionHandler, terminate, readLock);
     std::thread T2(&KeyboardReader::run,&reader);
 
     std::cout << "Welcome! Please register if you're not yet registered, otherwise please login to your account." << std::endl;
@@ -70,10 +76,10 @@ int main(int argc, char *argv[]) {
 
         std::cout << answer << std::endl;
         if (answer == "ACK 3" || answer == "ERROR 3") {
-                std::lock_guard<std::mutex> lock(readLock);
-                if (answer == "ACK 3")
-                    terminate = true;
-                condition.notify_all();
+            std::lock_guard<std::mutex> lock(readLock);
+            if (answer == "ACK 3")
+                terminate = true;
+            condition.notify_all();
         }
 
     }
