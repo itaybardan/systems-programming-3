@@ -4,65 +4,32 @@ import bgu.spl.net.api.bidi.Messages.Message;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-/**
- * Class represents a user that is registered or connected to the  BGSServer
- */
+
 public class User implements Comparable<User> {
 
-    //region Fields
-
-    /**
-     * Integer represents a Disconnected from the server status.
-     */
     private static final int DISCONNECTED_ID = -1;
 
-    /**
-     * Integer represents the unique id of this user. used to sort users by their registration order.
-     */
-    private final int userNum;
+    private final int userId;
 
-    /**
-     * Integer represents the Connection Id of the connection handler that this user is currently connected to.
-     */
     private int connId;
 
-    /**
-     * String represent this User Name
-     */
     private final String userName;
 
-    /**
-     * String represents this User Password.
-     */
     private final String password;
 
-    /**
-     * Set Of User Objects represents the Users this User is Following after.
-     */
+    private short age;
+
     private final Set<User> following;
 
-    /**
-     * Set Of User Objects represent the Users that follows this user.
-     */
     private final Set<User> followers;
 
-    /**
-     * Boolean represent whether this user is connected or not.
-     */
     private volatile boolean isConnected;
 
-    /**
-     * Queue of Message Objects represents the Messages that was sent to this user when he\she was logged out.
-     * those messages will be sent to him\her in the next login.
-     */
     private final ConcurrentLinkedQueue<Message> waitingMessages;
 
     private final Set<User> blockedBy;
-
-    //endregion Fields
 
     /**
      * Default Constructor.
@@ -71,25 +38,22 @@ public class User implements Comparable<User> {
      * @param password String represents this user Password.
      * @param userNum  Integer represents the unique id of this user.
      */
-    public User(String userName, String password, int userNum) {
+    public User(String userName, String password, int userNum, short age) {
         this.connId = DISCONNECTED_ID;
         this.userName = userName;
         this.password = password;
+        this.age = age;
         this.isConnected = false;
         this.following = new HashSet<>();
         this.followers = new HashSet<>();
         this.waitingMessages = new ConcurrentLinkedQueue<>();
-        this.userNum = userNum;
-        this.blockedBy =  ConcurrentHashMap.newKeySet();//new HashSet<>();
+        this.userId = userNum;
+        this.blockedBy = new HashSet<>();
+
     }
 
-    //region Getters
     public int getConnId() {
         return connId;
-    }
-
-    public int getUserNum() {
-        return userNum;
     }
 
     public String getUserName() {
@@ -100,6 +64,8 @@ public class User implements Comparable<User> {
         return password;
     }
 
+    public short getAge() { return age;}
+
     /**
      * Return a copy of the current users this user is following
      *
@@ -108,6 +74,10 @@ public class User implements Comparable<User> {
     public Set<User> getFollowing() {
         return new HashSet<>(following);
     }
+
+    public short getFollowingAmm() {return (short) following.size();}
+
+    public short getFollowersAmm() {return (short) followers.size();}
 
     /**
      * Return a copy of the current users that follows this user.
@@ -173,6 +143,10 @@ public class User implements Comparable<User> {
         this.blockedBy.add(user);
     }
 
+    public Boolean isBlockedBy(User user){
+        return this.blockedBy.contains(user);
+    }
+
     /**
      * updating fields of this user after logging out.
      */
@@ -201,7 +175,7 @@ public class User implements Comparable<User> {
      */
     @Override
     public int compareTo(User user) {
-        return Integer.compare(this.userNum, user.userNum);
+        return Integer.compare(this.userId, user.userId);
     }
 
 }

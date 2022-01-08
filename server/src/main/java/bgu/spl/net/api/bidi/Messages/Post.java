@@ -7,12 +7,10 @@ import java.nio.charset.StandardCharsets;
  */
 public class Post extends Message {
 
-    //region Fields
     /**
      * String represents the content of the post.
      */
     private String content;
-    //endregion Fields
 
     /**
      * Default Constructor.
@@ -24,11 +22,9 @@ public class Post extends Message {
         this.content = content;
     }
 
-    //region Getters
     public String getContent() {
         return content;
     }
-    //endregion Getters
 
     /**
      * Convert all the data of this Post message to a byte array.

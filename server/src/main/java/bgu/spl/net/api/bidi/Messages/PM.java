@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
  */
 public class PM extends Message {
     public static String[] forbiddenWords = new String[]{"fuck", "dinner"};
-    //region Fields
     /**
      * String represents the username that needs to get this message.
      */
@@ -17,7 +16,6 @@ public class PM extends Message {
      * String represents the Content of this message.
      */
     private String content;
-    //endregion Fields
 
     /**
      * Default constructor.

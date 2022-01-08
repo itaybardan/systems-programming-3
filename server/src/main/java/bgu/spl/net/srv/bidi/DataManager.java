@@ -5,9 +5,8 @@ import bgu.spl.net.api.bidi.Messages.Message;
 import bgu.spl.net.api.bidi.Messages.Notification;
 import bgu.spl.net.api.bidi.User;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Vector;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -25,6 +24,9 @@ public class DataManager {
      * Atomic Integer represent the number of users that are currently registered to the Server.
      */
     private AtomicInteger numberOfUsers;
+    private final short YEAR;
+    private final short MONTH;
+    private final short DAY;
 
     /**
      * ConcurrentHashMap from String keys(UserNames) to User Objects,
@@ -74,6 +76,10 @@ public class DataManager {
      * Default Constructor
      */
     public DataManager() {
+        LocalDateTime now = LocalDateTime.now();
+        this.YEAR =(short) now.getYear();
+        this.MONTH =(short) now.getMonth().getValue();
+        this.DAY =(short) now.getDayOfMonth();
         this.namesToRegisteredUsers = new ConcurrentHashMap<>();
         this.namesToLoginUsers = new ConcurrentHashMap<>();
         this.sendOrLogLock = new ReentrantReadWriteLock(true);
@@ -84,6 +90,7 @@ public class DataManager {
         this.registerLock = this.registerOrUserListLock.writeLock();
         this.numberOfUsers = new AtomicInteger(0);
         this.messageHistory = new Vector<>();
+
     }
 
     /**
@@ -103,12 +110,15 @@ public class DataManager {
      * @param userName String represents the new user Name.
      * @param password String represents the new user password.
      */
-    public void registerUser(String userName, String password) {
-        //making sure no one try to register at the same time or use the UserList function at the same time.
+    public void registerUser(String userName, String password, short birthYear, short birthMonth, short birthDay) {
         this.registerLock.lock();
         int userNumber = this.generateUserNumber();
+
         //create new user with the given details and add it to the data base.
-        User newUser = new User(userName, password, userNumber);
+        short userAge = (short) (this.YEAR - birthYear);
+        if(birthMonth > this.MONTH || (birthMonth== this.MONTH && birthDay > this.DAY)) userAge--;
+        User newUser = new User(userName, password, userNumber, userAge);
+
         this.namesToRegisteredUsers.put(userName, newUser);
         this.registerLock.unlock();
     }
@@ -158,45 +168,39 @@ public class DataManager {
     }
 
     /**
-     * Editing a given user to Follow or Unfollow a collection of users according to the given parameters.
+     * Will follow/unfollow the requested user if the request, returns boolean value of whether the procedure was successful.
      *
      * @param toCheck User Object to edit his Follow and Unfollow List.
-     * @param users   List of String represents UserNames  to follow or unfollow.
+     * @param user   List of String represents UserNames  to follow or unfollow.
      * @param follow  Boolean represents whether to follow or unfollow the users in the list.
-     * @return List of String represents all the users which was successfully followed or unfollowed
+     * @return whether this user exists | the follow/unfollow method could be resolved successfully.
      */
-    public List<String> followOrUnfollow(User toCheck, List<String> users, boolean follow) {
-        List<String> successful = new Vector<>();
+    public Boolean followOrUnfollow(User toCheck, String user, boolean follow) {
+        User current = this.namesToRegisteredUsers.get(user);
+        if(current == null) return false;
+
         if (follow) {
-            //if it was a follow request
-            for (String currentUser : users) {
-                //for each name in the given list
-                User current = this.namesToRegisteredUsers.get(currentUser);
-                if (current != null) {
+
                     //if the wanted user is registered
                     //updated the toCheck User following database
                     if (!toCheck.getFollowing().contains(current) && !toCheck.getBlockedBy().contains(current)) {
                         toCheck.addFollowing(current);
                         current.addFollower(toCheck);
-                        successful.add(currentUser);
+                        return true;
                     }
-                }
-            }
-        } else {
+
+        }
+        else {
             //unfollow
-            for (String currentUser : users) {
-                User current = this.namesToRegisteredUsers.get(currentUser);
-                if (current != null) {
+
                     if (toCheck.getFollowing().contains(current)) {
                         toCheck.removeFollowing(current);
                         current.removeFollower(toCheck);
-                        successful.add(currentUser);
+                        return true;
                     }
 
-                }
-            }
         }
-        return successful;
+        return false;
     }
 
     /**
@@ -235,16 +239,16 @@ public class DataManager {
      *
      * @return List of Strings represents the names of all the current registered users.
      */
-    public List<String> returnRegisteredUsers(User connectedUser) {
+    public List<User> returnRegisteredUsers(User connectedUser) {
         this.userListLock.lock();
         //getting the users and sorting them by their registration order
         List<User> users = new Vector<>(this.namesToRegisteredUsers.values());
         Collections.sort(users);
-        List<String> registeredUsers = new Vector<>();
+        List<User> registeredUsers = new Vector<>();
         for (User user : users) {
             //for each user --> add its name to the output list.
             if (!connectedUser.getBlockedBy().contains(user)) {
-                registeredUsers.add(user.getUserName());
+                registeredUsers.add(user);
             }
         }
         this.userListLock.unlock();

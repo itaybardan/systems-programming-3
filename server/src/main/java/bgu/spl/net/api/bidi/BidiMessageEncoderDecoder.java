@@ -5,61 +5,30 @@ import bgu.spl.net.api.bidi.Messages.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Vector;
 
 /**
  * Encoder and Decoder for the bidi protocol.
  */
 public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message> {
 
-    //region Fields
-    /**
-     * Bytes array represents the opcode as bytes.
-     */
     private byte[] opcodeBytes;
 
-    /**
-     * Integer represents the length of the opcode that was already inserted to the output.
-     */
     private int opcodeInsertedLength;
 
-    /**
-     * Bytes array represents one field, which is different in each message type, to be inserted to the output.
-     */
     private byte[] field1;
 
-    /**
-     * Bytes array represents one field, which is different in each message type, to be inserted to the output.
-     */
     private byte[] field2;
 
-    /**
-     * Integer represents the index of field 1.
-     */
     private int field1Index;
 
-    /**
-     * Integer represents the index of field 2.
-     */
     private int field2Index;
 
-    /**
-     * Integer represents the amount of zeroes that were already read.
-     */
-    private int zeroCounter;
+    private int zeros;
 
-    /**
-     * Byte represents the indicator if following or unfollowing.
-     */
-    private byte followByte;
+    private byte aByte;
 
-    /**
-     * Opcode Enum represents the current opcode.
-     */
     private Message.Opcode currentOpcode;
-    //endregion Fields
 
-    //Constructor
     public BidiMessageEncoderDecoder() {
         this.opcodeBytes = new byte[2];
         this.opcodeInsertedLength = 0;
@@ -68,8 +37,8 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         this.field2 = new byte[10];
         this.field1Index = 0;
         this.field2Index = 0;
-        this.zeroCounter = 0;
-        this.followByte = 0;
+        this.zeros = 0;
+        this.aByte = 0;
 
     }
 
@@ -82,6 +51,11 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
      */
     @Override
     public Message decodeNextByte(byte nextByte) {
+
+        if(nextByte ==';'){
+            return null;
+        }
+
         if (this.opcodeInsertedLength == 0) {
             this.opcodeBytes[0] = nextByte;
             this.opcodeInsertedLength++;
@@ -91,15 +65,13 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             this.opcodeInsertedLength++;
             initMessageContentAndLength();
             if ((this.currentOpcode == Message.Opcode.LOGOUT) ||
-                    (this.currentOpcode == Message.Opcode.USERLIST)) {
-                //The only opcodes who gets just the opcode in the command.
+                    (this.currentOpcode == Message.Opcode.LOGSTAT)) {
                 if (this.currentOpcode == Message.Opcode.LOGOUT) {
                     generalVariablesReset();
                     return new Logout();
                 } else {
-                    //The opcode is USERLIST.
                     generalVariablesReset();
-                    return new UserList();
+                    return new LogStat();
                 }
             }
             return null;
@@ -118,9 +90,9 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingMessage(byte nextByte) {
         Message output;
         if (this.currentOpcode == Message.Opcode.REGISTER) {
-            output = readingRegisterOrLoginMessage(Message.Opcode.REGISTER, nextByte);
+            output = readingRegisterMessage(nextByte);
         } else if (this.currentOpcode == Message.Opcode.LOGIN) {
-            output = readingRegisterOrLoginMessage(Message.Opcode.LOGIN, nextByte);
+            output = readingLoginMessage(nextByte);
         } else if (this.currentOpcode == Message.Opcode.FOLLOW) {
             output = readingFollowMessage(nextByte);
         } else if (this.currentOpcode == Message.Opcode.POST) {
@@ -168,10 +140,10 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingPMMessage(byte nextByte) {
         //field1 = username   | field2 = content
         Message output;
-        if (this.zeroCounter == 0) {
+        if (this.zeros == 0) {
             //Inserting to username.
             if (nextByte == '\0') {
-                this.zeroCounter++;
+                this.zeros++;
             } else {
                 insertByteToField1(nextByte);
             }
@@ -233,34 +205,22 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
      * @return Message represents the decoded message, or null if not done reading the message.
      */
     private Message readingFollowMessage(byte nextByte) {
-        //field1 = numberOfUsers  | field2 = usernameList | followbyte = follow \ unfollow | zerocounter = bytesCounter
-        if (this.zeroCounter == 0) {
-            this.field1 = new byte[2];
-            this.followByte = nextByte;
-            this.zeroCounter++;
+        //field1 = null  | field2 = usernameList | followbyte = follow \ unfollow | zerocounter = bytesCounter
+        if (this.zeros == 0) {
+            this.aByte = nextByte;
+            this.zeros++;
             return null;
-        } else if ((this.zeroCounter > 0) && (this.zeroCounter < 3)) {
-            //The amount of bytes that were read is 1 or 2 which means (according to the assignment notifications)
-            // the next bytes are the number of users.
-            insertToNumberOfUsers(nextByte);
-            return null;
-        } else {
-            short numberOfUsers = Message.bytesToShort(this.field1);
+        }
+        else {
             insertByteToField2(nextByte);
             if (nextByte == '\0') {
-                // The current username ended.
-                this.zeroCounter++;
-                //to reduce the first three bytes of the follow \ unfollow and numberOfUsers bytes
-                if (this.zeroCounter - 3 == numberOfUsers) {
-                    return generateFollowMessage(numberOfUsers);
-                } else {
+                    return generateFollowMessage();
+                }
+            else {
                     return null;
                 }
-            } else {
-                return null;
             }
         }
-    }
 
     private Message readingBlockMessage(byte nextByte) {
         // field1 = username
@@ -277,95 +237,135 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         return output;
     }
 
-    /**
-     * Inserts the next byte (which represents the number of users) to field1 in place 0 or 1 according to the amount
-     * of bytes that were read.
-     *
-     * @param nextByte Represents the byte that needs to be inserted.
-     */
-    private void insertToNumberOfUsers(byte nextByte) {
-        if (this.zeroCounter == 1) {
-            this.field1[0] = nextByte;
-            this.zeroCounter++;
-        } else {
-            this.field1[1] = nextByte;
-            this.zeroCounter++;
-        }
-    }
+
 
     /**
      * Generating "Follow" message, by translating the arrays of bytes to strings.
      *
-     * @param numberOfUsers Represents the number of users.
      * @return Message which is a Follow message.
      */
-    private Message generateFollowMessage(int numberOfUsers) {
-        Message output;//collected all the necessary users --> convert them to string and generate a FollowMessage
+    private Message generateFollowMessage() {
+        Message output;
         checkReduceField2();
-        Vector<String> allUsers = new Vector<>();
-        int start = 0;
-        for (int i = 0; i < field2Index; i++) {
-            if (field2[i] == '\0') {
-                //finished a single user;
-                byte[] userByte = Arrays.copyOfRange(field2, start, i);
-                String user = new String(userByte, StandardCharsets.UTF_8);
-                allUsers.add(user);
-                start = i + 1;
-            }
-        }
-        output = new Follow(this.followByte, (short) numberOfUsers, allUsers);
+
+        byte[] userByte = Arrays.copyOfRange(field2, 0, field2Index-1);
+        output = new Follow(this.aByte, new String(userByte, StandardCharsets.UTF_8));
         generalVariablesReset();
         return output;
     }
 
     /**
-     * Reading bytes and inserting them to the fields according to the specifications for "REGISTER" and "LOGIN" commands.
+     * Reading bytes and inserting them to the fields according to the specifications for "REGISTER" commands.
      *
-     * @param outputOpcode Represents the current opcode of the command.
      * @param nextByte     Represents the next byte to be translated.
      * @return Message represents the decoded message, or null if not done reading the message.
      */
-    private Message readingRegisterOrLoginMessage(Message.Opcode outputOpcode, byte nextByte) {
-        //Field1 = username | Field2 = password
-        if (this.zeroCounter == 0) {
-            //The next byte going to be to the userName
+    private Message readingRegisterMessage(byte nextByte) {
+        //Field1 = username/0password | Field2 = birth date
+        if (this.zeros <= 1) {
+            //The next byte going to be to the userName or passName
             if (nextByte == '\0') {
-                // The current username ended.
-                checkReduceField1();
-                this.zeroCounter++;
-                return null;
+                this.zeros++;
+                     if( this.zeros == 2) {
+                         checkReduceField1();
+                         return null;
+                     }
+
             }
             insertByteToField1(nextByte);
             return null;
         } else {
-            //The next byte is going to be to the password.
+            //The next byte is going to be to the date.
             if (nextByte == '\0') {
+
                 checkReduceField2();
                 //Creating the Register or Login Message
-                return generateRegisterOrLoginMessage(outputOpcode);
+                return generateRegisterMessage();
             }
-            insertByteToField2(nextByte);
+            insertByteToField2((byte) (nextByte- 48));
             return null;
         }
     }
 
     /**
-     * Generating "Register" or "Login" messages according to the current opcode, by translating the arrays of bytes
+     * Generating "Register"  messages according to the current opcode, by translating the arrays of bytes
      * to strings.
      *
-     * @param outputOpcode Represents the current opcode of the command.
-     * @return Message which is a Register or Login message.
+     * @return Message which is a Register message.
      */
-    private Message generateRegisterOrLoginMessage(Message.Opcode outputOpcode) {
+
+    private Message generateRegisterMessage() { //TODO separate into register.
+        Message output;
+        int separator=0;
+        for (int i = 0; i < field1Index; i++) {
+            if (field1[i] == '\0') {
+                separator = i;
+                break;
+            }
+        }
+
+        String username = new String(Arrays.copyOfRange(field1, 0, separator), StandardCharsets.UTF_8);
+        String password = new String(Arrays.copyOfRange(field1, separator+1, field1Index), StandardCharsets.UTF_8);
+
+        //init date
+        short day =(short) (field2[0]*10 + field2[1]);
+        short month =(short) (field2[3] * 10 + field2[4]);
+        short year =(short) (field2[6]*1000 + field2[7]*100 + field2[8]*10 + field2[9]);
+
+        output = new Register(username, password, year, month, day);
+
+        generalVariablesReset();
+        return output;
+    }
+
+    /**
+     * Reading bytes and inserting them to the fields according to the specifications for "Login" commands.
+     *
+     * @param nextByte     Represents the next byte to be translated.
+     * @return Message represents the decoded message, or null if not done reading the message.
+     */
+    private Message readingLoginMessage(byte nextByte) {
+        //Field1 = username | Field2 = password
+        if (this.zeros == 0) {
+            //The next byte going to be to the userName
+            if (nextByte == '\0') {
+                // The current username ended.
+                checkReduceField1();
+                this.zeros++;
+                return null;
+            }
+            insertByteToField1(nextByte);
+            return null;
+        } else if (this.zeros == 1){
+            //The next byte is going to be to the password.
+            if (nextByte == '\0') {
+                checkReduceField2();
+                this.zeros++;
+                return null;
+            }
+            insertByteToField2(nextByte);
+            return null;
+        }
+        else if(nextByte != '\0'){
+            aByte = nextByte;
+            return null;
+        }
+        return generateLoginMessage((char) aByte);
+    }
+
+    /**
+     * Generating "Login"  messages according to the current opcode, by translating the arrays of bytes
+     * to strings.
+     *
+     * @return Message which is a Login message.
+     */
+
+    private Message generateLoginMessage(char captcha) {
         Message output;
         String username = new String(this.field1, StandardCharsets.UTF_8);
         String password = new String(this.field2, StandardCharsets.UTF_8);
-        if (outputOpcode == Message.Opcode.REGISTER) {
-            output = new Register(username, password);
-        } else {
-            //The opcode is login.
-            output = new Login(username, password);
-        }
+        output = new Login(username, password, captcha);
+
         generalVariablesReset();
         return output;
     }
@@ -380,7 +380,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         this.field2 = new byte[10];
         this.field1Index = 0;
         this.field2Index = 0;
-        this.zeroCounter = 0;
+        this.zeros = 0;
         this.opcodeInsertedLength = 0;
     }
 

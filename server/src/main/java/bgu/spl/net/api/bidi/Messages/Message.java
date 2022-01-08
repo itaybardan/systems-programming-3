@@ -5,15 +5,10 @@ package bgu.spl.net.api.bidi.Messages;
  */
 public abstract class Message {
 
-    //region Fields
     /**
      * Opcode Enum represents the Opcode that defines message type
      */
     protected Opcode opcode;
-
-    //endregion Fields
-
-    //region Opcode Enum
 
     /**
      * converting a bytes array to the equivalent short number.
@@ -26,7 +21,6 @@ public abstract class Message {
         result += (short) (byteArr[1] & 0xff);
         return result;
     }
-    //endregion Opcode Enum
 
     /**
      * Convert the given number to the matching opcode.
@@ -48,7 +42,7 @@ public abstract class Message {
         } else if (code == 6) {
             return Opcode.PM;
         } else if (code == 7) {
-            return Opcode.USERLIST;
+            return Opcode.LOGSTAT;
         } else if (code == 8) {
             return Opcode.STAT;
         } else if (code == 9) {
@@ -126,7 +120,7 @@ public abstract class Message {
         FOLLOW,
         POST,
         PM,
-        USERLIST,
+        LOGSTAT,
         STAT,
         NOTIFICATION,
         ACK,
@@ -146,7 +140,7 @@ public abstract class Message {
                 return 5;
             } else if (this == Opcode.PM) {
                 return 6;
-            } else if (this == Opcode.USERLIST) {
+            } else if (this == Opcode.LOGSTAT) {
                 return 7;
             } else if (this == Opcode.STAT) {
                 return 8;

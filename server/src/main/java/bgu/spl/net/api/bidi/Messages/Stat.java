@@ -1,34 +1,40 @@
 package bgu.spl.net.api.bidi.Messages;
 
-import java.nio.charset.StandardCharsets;
-
 /**
- * Message Of type STAT of Client-To-Server communication, when a user wants to check the Status of a certain user.
+ * Message Of type STAT of Client-To-Server communication, when a user wants to check the Status of certain users.
  */
-public class  Stat extends Message {
+public class Stat extends Message {
 
-    //region Fields
     /**
-     * String represents the username that the client want to check his status.
+     * String represents the usersthat the client want to check.
      */
-    private String username;
-    //endregion Fields
+    private String[] users;
+    private final char SEPARATOR = '|';
 
     /**
      * Default Constructor.
      *
-     * @param username String represents the username that the client want to check his status.
+     * @param usersString String that represents the users that the client want to check.
      */
-    public Stat(String username) {
+    public Stat(String usersString) {
         this.opcode = Opcode.STAT;
-        this.username = username;
+
+        int usersAmm = (int)usersString.chars().filter(ch -> ch == SEPARATOR).count();
+        int start=0;
+        int counter=0;
+        this.users = new String[usersAmm];
+        for (int i = 0; i < usersString.length(); i++) {
+            if(usersString.charAt(i)== SEPARATOR) {
+                users[counter] = usersString.substring(start, i);
+                counter++;
+                start = i+1;
+            }
+        }
     }
 
-    //region Getters
-    public String getUsername() {
-        return username;
+    public String[] getUsers() {
+        return users;
     }
-    //endregion Getters
 
     /**
      * Convert all the data of this Stat message to a byte array.
@@ -37,37 +43,41 @@ public class  Stat extends Message {
      */
     @Override
     public byte[] convertMessageToBytes() {
-        //converting the opcode and username to bytes arrays
-        byte[] opcode = this.shortToBytes(this.opcode.getCode());
-        byte[] userNameBytes = this.username.getBytes(StandardCharsets.UTF_8);
-        byte[] output = new byte[opcode.length + userNameBytes.length + 1];
-        int index = 0;
-        //inserting all the data of this message to a single byte array to return.
-        index = insertArray(opcode, output, index);
-        index = insertArray(userNameBytes, output, index);
-        output[index] = '\0';
-        return output;
+        return null;
     }
 
     /**
      * Generate matching Ack Message to this Stat Message Message according the Message data and server protocol.
      *
-     * @param numberOfPosts     short number represents the number of posts of the requested user.
-     * @param numberOfFollowers short number represents the number of followers of the requested user.
-     * @param numberOfFollowing short number represents the number of users following of the requested user.
+     * @param numberOfPosts     short[] represents the number of posts of the requested users.
+     * @param numberOfFollowers short[] represents the number of followers of the requested users.
+     * @param numberOfFollowing short[] represents the number of users following of the requested users.
      * @return Ack message matching this Stat Message data of this message according to the server protocol.
+     *
      */
-    public Ack generateAckMessage(short numberOfPosts, short numberOfFollowers, short numberOfFollowing) {
-
+    public Ack generateAckMessage(int size, short[] age, short[] numberOfPosts, short[] numberOfFollowers, short[] numberOfFollowing) {
         //converting the number of posts, number of followers and number of following to bytes arrays.
-        byte[] numberOfPostsBytes = this.shortToBytes(numberOfPosts);
-        byte[] numberOfFollowersBytes = this.shortToBytes(numberOfFollowers);
-        byte[] numberOfFollowingBytes = this.shortToBytes(numberOfFollowing);
-        byte[][] elements = new byte[3][];
-        //inserting all the array to the elements 2-D array of bytes
-        elements[0] = numberOfPostsBytes;
-        elements[1] = numberOfFollowersBytes;
-        elements[2] = numberOfFollowingBytes;
+        int sizeActual =1 + 5*size;
+        int j=0;
+        byte[][] elements = new byte[sizeActual][];
+        elements[0] = shortToBytes((short)size);
+
+
+        for (int i = 0; i < sizeActual-1; i+=5) {
+            byte[] ageBytes = this.shortToBytes(age[j]);
+            byte[] numberOfPostsBytes = this.shortToBytes(numberOfPosts[j]);
+            byte[] numberOfFollowersBytes = this.shortToBytes(numberOfFollowers[j]);
+            byte[] numberOfFollowingBytes = this.shortToBytes(numberOfFollowing[j]);
+            elements[i+1] = ageBytes;
+            elements[i+2] = numberOfPostsBytes;
+            elements[i+3] = numberOfFollowersBytes;
+            elements[i+4] = numberOfFollowingBytes;
+
+            byte[] separator = {'\0'};
+            elements[i+5] = separator;
+            j++;
+        }
+
         return new Ack(this.opcode, elements);
 
     }

@@ -7,9 +7,6 @@ import java.util.Map;
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
-    /**
-     * Map of ids as keys to connectionHandlers as values.
-     */
     private Map<Integer, ConnectionHandler<T>> connectionHandlerMap;
 
     public ConnectionsImpl() {

@@ -6,12 +6,10 @@ package bgu.spl.net.api.bidi.Messages;
  */
 public class Error extends Message {
 
-    //region Fields
     /**
      * Opcode of the Message which was canceled.
      */
     private Opcode errorMessageOpcode;
-    //endregion Fields
 
     /**
      * Default Constructor.
