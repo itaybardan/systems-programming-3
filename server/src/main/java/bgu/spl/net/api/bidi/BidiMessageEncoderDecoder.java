@@ -27,6 +27,8 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
 
     private byte aByte;
 
+    private boolean isEnd=false;
+
     private Message.Opcode currentOpcode;
 
     public BidiMessageEncoderDecoder() {
@@ -51,6 +53,11 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
      */
     @Override
     public Message decodeNextByte(byte nextByte) {
+
+        if(nextByte ==';'){
+            return null;
+        }
+
         if (this.opcodeInsertedLength == 0) {
             this.opcodeBytes[0] = nextByte;
             this.opcodeInsertedLength++;
@@ -135,6 +142,10 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingPMMessage(byte nextByte) {
         //field1 = username   | field2 = content
         Message output;
+        if(isEnd){
+
+        }
+
         if (this.zeros == 0) {
             //Inserting to username.
             if (nextByte == '\0') {
@@ -146,6 +157,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         } else {
             //Inserting content.
             if (nextByte == '\0') {
+                isEnd = true;
                 output = generatePMMessage();
                 this.generalVariablesReset();
             } else {
@@ -272,6 +284,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         } else {
             //The next byte is going to be to the date.
             if (nextByte == '\0') {
+
                 checkReduceField2();
                 //Creating the Register or Login Message
                 return generateRegisterMessage();

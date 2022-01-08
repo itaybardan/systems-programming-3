@@ -96,6 +96,7 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
 
 bool ConnectionHandler::sendLine(std::string& line) { //TODO CHANGE JAVA CODE TO ACCOMMODATE THE DELIMITER (';') CORRECTLY
     return sendFrameAscii(line, '\0');
+
 }
 
 void ConnectionHandler::encodeMessage(std::string &message, short opcode){
@@ -150,7 +151,9 @@ bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
     bool result2=sendBytes(frame.c_str(),frame.length()); //sending the rest of the frame
     if(!result2) return false;
 
-    if(opcode == 3 || opcode==7) return true; //TODO every post needs to end with delimiter ';'.
+    if(opcode == 3 || opcode==7) return true;
+    sendBytes(&delimiter,1);
+    delimiter = ';';
     return sendBytes(&delimiter,1);
 }
 
