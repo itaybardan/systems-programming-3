@@ -27,8 +27,6 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
 
     private byte aByte;
 
-    private boolean isEnd=false;
-
     private Message.Opcode currentOpcode;
 
     public BidiMessageEncoderDecoder() {
@@ -142,10 +140,6 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private Message readingPMMessage(byte nextByte) {
         //field1 = username   | field2 = content
         Message output;
-        if(isEnd){
-
-        }
-
         if (this.zeros == 0) {
             //Inserting to username.
             if (nextByte == '\0') {
@@ -157,7 +151,6 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         } else {
             //Inserting content.
             if (nextByte == '\0') {
-                isEnd = true;
                 output = generatePMMessage();
                 this.generalVariablesReset();
             } else {
