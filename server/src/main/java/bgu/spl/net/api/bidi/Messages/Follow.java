@@ -9,7 +9,6 @@ import java.util.Vector;
  */
 public class Follow extends Message {
 
-    //region Fields
     /**
      * Boolean represents whether the Request is for following or unfollowing
      */
@@ -41,7 +40,6 @@ public class Follow extends Message {
 
     }
 
-    //region Getters
     public boolean isFollowing() {
         return isFollowing;
     }
@@ -49,7 +47,6 @@ public class Follow extends Message {
     public String getUser() {
         return user;
     }
-    //endregion Getters
 
     /**
      * Convert all the data of this Follow message to a byte array.

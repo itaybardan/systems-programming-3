@@ -6,12 +6,11 @@ import java.nio.charset.StandardCharsets;
  * Message Of type STAT of Client-To-Server communication, when a user wants to check the Status of a certain user.
  */
 public class Block extends Message {
-    //region Fields
+
     /**
      * String represents the username that the client want to check his status.
      */
     private final String username;
-    //endregion Fields
 
     /**
      * Default Constructor.
@@ -23,14 +22,10 @@ public class Block extends Message {
         this.username = username;
     }
 
-    //region Getters
-
     public String getUsername() {
         return username;
     }
 
-
-    //endregion Getters
 
     /**
      * Convert all the data of this Stat message to a byte array.
@@ -51,25 +46,4 @@ public class Block extends Message {
         return output;
     }
 
-//    /**
-//     * Generate matching Ack Message to this Block Message according the Message data and server protocol.
-//     *
-//     * @param numberOfPosts     short number represents the number of posts of the requested user.
-//     * @param numberOfFollowers short number represents the number of followers of the requested user.
-//     * @param numberOfFollowing short number represents the number of users following of the requested user.
-//     * @return Ack message matching this Stat Message data of this message according to the server protocol.
-//     */
-//    public Ack generateAckMessage(short numberOfPosts, short numberOfFollowers, short numberOfFollowing) {
-//
-//        //converting the number of posts, number of followers and number of following to bytes arrays.
-//        byte[] numberOfPostsBytes = this.shortToBytes(numberOfPosts);
-//        byte[] numberOfFollowersBytes = this.shortToBytes(numberOfFollowers);
-//        byte[] numberOfFollowingBytes = this.shortToBytes(numberOfFollowing);
-//        byte[][] elements = new byte[3][];
-//        //inserting all the array to the elements 2-D array of bytes
-//        elements[0] = numberOfPostsBytes;
-//        elements[1] = numberOfFollowersBytes;
-//        elements[2] = numberOfFollowingBytes;
-//        return new Ack(this.opcode, elements);
-//
 }

@@ -5,13 +5,11 @@ package bgu.spl.net.api.bidi.Messages;
  */
 public class Stat extends Message {
 
-    //region Fields
     /**
      * String represents the usersthat the client want to check.
      */
     private String[] users;
     private final char SEPARATOR = '|';
-    //endregion Fields
 
     /**
      * Default Constructor.
@@ -34,11 +32,9 @@ public class Stat extends Message {
         }
     }
 
-    //region Getters
     public String[] getUsers() {
         return users;
     }
-    //endregion Getters
 
     /**
      * Convert all the data of this Stat message to a byte array.
@@ -82,7 +78,6 @@ public class Stat extends Message {
             j++;
         }
 
-        //inserting all the array to the elements 2-D array of bytes
         return new Ack(this.opcode, elements);
 
     }

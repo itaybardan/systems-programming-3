@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
  */
 public class Register extends Message {
 
-    //region Fields
     /**
      * String represents the Username who wants to register to the server.
      */
@@ -17,7 +16,6 @@ public class Register extends Message {
      * String represents the Password of the4 user who wants to register to the server.
      */
     private final String password;
-    //endregion Fields
 
     public short getYear() {
         return year;
@@ -49,7 +47,6 @@ public class Register extends Message {
         this.day = day;
     }
 
-    //region Getters.
     public String getUsername() {
         return username;
     }
@@ -57,7 +54,6 @@ public class Register extends Message {
     public String getPassword() {
         return password;
     }
-    //endregion Getters
 
     /**
      * Convert all the data of this Register message to a byte array.

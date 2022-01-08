@@ -5,7 +5,6 @@ package bgu.spl.net.api.bidi.Messages;
  */
 public class Ack extends Message {
 
-    //region Fields
     /**
      * 2-D array of Bytes Represents additional/Optional Elements to add to the Ack message.
      */
@@ -15,7 +14,6 @@ public class Ack extends Message {
      */
     private Opcode resolvedOpcode;
 
-    //endregion Fields
 
     /**
      * Default Constructor

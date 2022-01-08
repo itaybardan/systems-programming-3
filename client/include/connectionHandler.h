@@ -52,13 +52,13 @@ public:
 
     short getOpCode(std::string inputType);
 
-    std::string getMessageAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+    std::string getMessageAck(std::string &output, char &ch, std::vector<char> &message, char *temp);
 
     std::string getFollowAck(std::string &output, char &ch, std::vector<char> &message);
 
-    void getLogstatAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+    void getLogstatAck(std::string &output, char &ch, std::vector<char> &message, char *temp);
 
-    void getStatAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray);
+    void getStatAck(std::string &output, char &ch, std::vector<char> &message, char *temp);
 
     std::string getNotifyAck(std::string &output, char &ch);
 

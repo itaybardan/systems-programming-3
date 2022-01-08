@@ -10,14 +10,10 @@ using std::endl;
 using std::string;
 using std::vector;
 
-/**
- * Default constructor
- */
+
 ConnectionHandler::ConnectionHandler(string host, short port): host_(host), port_(port), io_service_(),
 socket_(io_service_){}
-/**
-* Default destructor
-*/
+
 ConnectionHandler::~ConnectionHandler() {
     close();
 }
@@ -213,26 +209,26 @@ bool ConnectionHandler::getLine(std::string &output) {
     return true;
 }
 
-string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
+string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &message, char *temp) {
 
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
     }
     //getting resolved opcode
-    ch_tempArray[0] = message[2];
-    ch_tempArray[1] = message[3];
-    short opcode = bytesToShort(ch_tempArray);
+    temp[0] = message[2];
+    temp[1] = message[3];
+    short opcode = bytesToShort(temp);
     output.append("ACK " + std::to_string(opcode));
     if(opcode == 4){
         return getFollowAck(output, ch, message);;
     }
     else if(opcode ==7){
-        getLogstatAck(output, ch, message, ch_tempArray);
+        getLogstatAck(output, ch, message, temp);
         return output;
     }
     else if(opcode == 8){
-        getStatAck(output, ch, message, ch_tempArray);
+        getStatAck(output, ch, message, temp);
         return output;
     }
     else{
@@ -249,14 +245,14 @@ string ConnectionHandler::getFollowAck(string &output, char &ch, vector<char> &m
     return output;
     }
 
-void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &message,char *ch_tempArray) {
+void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &message,char *temp) {
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
     }
-    ch_tempArray[0] = message[4];
-    ch_tempArray[1] = message[5];
-    short numberOfUsers = bytesToShort(ch_tempArray);
+    temp[0] = message[4];
+    temp[1] = message[5];
+    short numberOfUsers = bytesToShort(temp);
 
     char* numberToProcess= new char[2];
     for(int i = 0; i < numberOfUsers; i++){
@@ -270,20 +266,20 @@ void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &me
             currentName = currentName + std::to_string(num) + " ";
         }
         output.append(currentName);
-        getBytes(ch_tempArray, 1);
+        getBytes(temp, 1);
     }
     delete[] numberToProcess;
 }
 
-void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
+void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &message, char *temp) {
 
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
     }
-    ch_tempArray[0] = message[4];
-    ch_tempArray[1] = message[5];
-    short numberOfUsers = bytesToShort(ch_tempArray);
+    temp[0] = message[4];
+    temp[1] = message[5];
+    short numberOfUsers = bytesToShort(temp);
 
     char* numberToProcess= new char[2];
     for(int i = 0; i < numberOfUsers; i++){
@@ -296,7 +292,7 @@ void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &messa
             currentName = currentName + std::to_string(num) + " ";
         }
         output.append(currentName);
-        getBytes(ch_tempArray, 1);
+        getBytes(temp, 1);
     }
     delete[] numberToProcess;
 }

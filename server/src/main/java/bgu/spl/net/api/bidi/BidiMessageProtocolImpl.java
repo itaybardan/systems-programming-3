@@ -10,31 +10,17 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
 
-    /**
-     * DataManager Represents the shared data object.
-     */
+
     private final DataManager dataManager;
-    /**
-     * Boolean represents if the connection should terminate.
-     */
+
     private boolean shouldTerminate;
-    /**
-     * Connections<Message> Represents the set of connections (connectionHandlers) currently connected.
-     */
+
     private Connections<Message> connections;
-    /**
-     * Represents a read and write locks. Login and Logout are write locks, Post and PM are read lock.
-     */
+
     private ReadWriteLock logOrSendLock;
 
-    /**
-     * Represents a read and write locks. Register is write lock, LogStat read lock.
-     */
     private ReadWriteLock registerOrLogStatLock;
 
-    /**
-     * Integer represents a personal connection ID of the current connectionHandler that holds this protocol.
-     */
     private int connectionID;
 
     public BidiMessageProtocolImpl(DataManager dataManager, ReadWriteLock logOrSendLock, ReadWriteLock registerOrLogStatLock) {
@@ -331,6 +317,12 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         }
 
     }
+    /**
+     * Is called when a user blocks all connection from another user.
+     * Sends error if user is not registered.
+     *
+     * @param blockMsg Represents a BLOCK message to be processed.
+     */
 
     private void blockFunction(Block blockMsg) {
         User currentClient = this.dataManager.getConnectedUser(this.connectionID);
