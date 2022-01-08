@@ -111,7 +111,10 @@ void ConnectionHandler::encodeMessage(std::string &message, short opcode){
             break;
         case(4):
             break;
-        case(6):std::replace(message.begin(), message.end(), ' ', '\0');
+        case(6): {
+            int index = message.find(" ");
+            message[index] = '\0';
+        }
             break;
         case(7): message.clear();
             break;
@@ -188,9 +191,8 @@ void ConnectionHandler::close() {
 bool ConnectionHandler::getLine(std::string &output) {
 
     char ch;
-    //getting the first two bytes --> the opcode of the message
     std::vector<char> message;
-    for(int i = 0;i < 2; i++){
+    for(int i = 0;i < 2; i++){ //opcode
         getBytes(&ch,1);
         message.push_back(ch);
     }
@@ -198,22 +200,21 @@ bool ConnectionHandler::getLine(std::string &output) {
     char ch_tempArray[2] = {message[0],message[1]};
     short opcode = bytesToShort(ch_tempArray);
 
-    //opcode could be of a ACK , ERROR or Notification
+
     if(opcode == 10){
-        getMessageAck(output, ch, message, ch_tempArray, opcode);
+        getMessageAck(output, ch, message, ch_tempArray);
     }
     else if(opcode == 11){
         getErrorAck(output, ch, message, ch_tempArray, opcode);
     }
-    else{
-        //notification case
+    else{//notification
         getNotifyAck(output, ch);
     }
     return true;
 }
 
-string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &message, char *ch_tempArray,
-                                        short opcode) {
+string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
+
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
@@ -221,7 +222,8 @@ string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &
     //getting resolved opcode
     ch_tempArray[0] = message[2];
     ch_tempArray[1] = message[3];
-    opcode = bytesToShort(ch_tempArray);
+    short opcode = bytesToShort(ch_tempArray);
+    output.append("ACK " + std::to_string(opcode));
     if(opcode == 4){
         return getFollowAck(output, ch, message);;
     }
@@ -235,26 +237,19 @@ string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &
     }
     else{
      //for Register, Login, Logout, Post, Pm
-    return getOtherAck(output, opcode);
+    return output;
     }
 }
 
 string ConnectionHandler::getFollowAck(string &output, char &ch, vector<char> &message){
-    output.append("ACK ");
-    output.append("4 ");
-
 
     string loggedIn;
     getFrameAscii(loggedIn, '\0');
-    output.append(loggedIn.substr(0, loggedIn.length() - 1));
+    output.append(" " + loggedIn.substr(0, loggedIn.length() - 1));
     return output;
     }
 
 void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &message,char *ch_tempArray) {
-    //adding the ack with matching opcode
-    output.append("ACK 7");
-
-    //getting the next two bytes to see how many names to read
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
@@ -266,7 +261,6 @@ void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &me
     char* numberToProcess= new char[2];
     for(int i = 0; i < numberOfUsers; i++){
         output.append(" ");
-        //adding each user's stat to the string
 
 
         string currentName;
@@ -282,11 +276,7 @@ void ConnectionHandler::getLogstatAck(string &output, char &ch, vector<char> &me
 }
 
 void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &message, char *ch_tempArray) {
-    //adding the ack with matching opcode
-    output.append("ACK ");
-    output.append("7 ");
 
-    //getting the next two bytes to see how many names to read
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
@@ -298,8 +288,6 @@ void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &messa
     char* numberToProcess= new char[2];
     for(int i = 0; i < numberOfUsers; i++){
         output.append(" ");
-        //adding each user's stat to the string
-
 
         string currentName;
         for (int j = 0; j < 4; ++j) {
@@ -313,25 +301,19 @@ void ConnectionHandler::getStatAck(string &output, char &ch, vector<char> &messa
     delete[] numberToProcess;
 }
 
-string ConnectionHandler::getOtherAck(string &output, short opcode) const {
-    output.append("ACK ");
-    output.append(std::to_string(opcode));
-    return output;
-}
-
 string ConnectionHandler::getNotifyAck(string &output, char &ch) {
     output.append("NOTIFICATION ");
     getBytes(&ch, 1);
-    //adding type of Notification
+
     output.append(ch == '\0' ? "PM " : "Public ");
     string postingUser;
     getFrameAscii(postingUser, '\0');
-    //adding posting userName
+
     output.append(postingUser.substr(0,postingUser.length()-1));
     output.append(" ");
     string content;
     getFrameAscii(content, '\0');
-    //adding the content of the notification
+
     output.append(content.substr(0,content.length()-1));
     return output;
 }
