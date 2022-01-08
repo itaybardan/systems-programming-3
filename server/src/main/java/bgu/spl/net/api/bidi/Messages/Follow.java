@@ -4,33 +4,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Vector;
 
-/**
- * Message Of type FOLLOW of Client-To-Server communication, when a user wants to follow or unfollow certain users
- */
 public class Follow extends Message {
 
-    //region Fields
-    /**
-     * Boolean represents whether the Request is for following or unfollowing
-     */
-    private boolean isFollowing;
-    /**
-     * Short number represent the number of users in the Follow request
-     */
-    private short numberOfUsers;
-    /**
-     * List of String of users that the client want to follow or unfollow
-     */
-    private List<String> users;
-    //endregion Fields
+    private final boolean isFollowing;
+    private final short numberOfUsers;
+    private final List<String> users;
 
-    /**
-     * Default constructor
-     *
-     * @param isFollowing   Byte represents whether the client wants to follow or unfollow.
-     * @param numberOfUsers Short number represents the number of users in the follow request.
-     * @param users         List of String represents the users the client wants to follow or unfollow.
-     */
     public Follow(byte isFollowing, short numberOfUsers, List<String> users) {
         this.opcode = Opcode.FOLLOW;
         if (isFollowing == '\0') {
@@ -45,7 +24,6 @@ public class Follow extends Message {
 
     }
 
-    //region Getters
     public boolean isFollowing() {
         return isFollowing;
     }
@@ -57,13 +35,7 @@ public class Follow extends Message {
     public List<String> getUsers() {
         return users;
     }
-    //endregion Getters
 
-    /**
-     * Convert all the data of this Follow message to a byte array.
-     *
-     * @return Byte array represent this Follow message in the right order according to the server protocol
-     */
     @Override
     public byte[] convertMessageToBytes() {
         byte[] opcode = this.shortToBytes(this.opcode.getCode());
@@ -100,13 +72,6 @@ public class Follow extends Message {
         return output;
     }
 
-    /**
-     * Generate matching Ack Message to this Follow Message Message according the Message data and server protocol.
-     *
-     * @param numberOfUsers Short number represents the amount of users in the given list
-     * @param users         List of Strings represents the users that were found by the server
-     * @return Ack message matching this Follow Message data of this message according to the server protocol.
-     */
     public Ack generateAckMessage(short numberOfUsers, List<String> users) {
 
         //converting the number of users to bytes array

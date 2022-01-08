@@ -1,16 +1,9 @@
 package bgu.spl.net.api.bidi.Messages;
 
 
-/**
- * Message Of type ERROR of Server-To-Client communication, when a message request when wrong
- */
 public class Error extends Message {
 
-    //region Fields
-    /**
-     * Opcode of the Message which was canceled.
-     */
-    private Opcode errorMessageOpcode;
+    private final Opcode errorMessageOpcode;
     //endregion Fields
 
     /**

@@ -21,58 +21,26 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class DataManager {
 
-    /**
-     * Atomic Integer represent the number of users that are currently registered to the Server.
-     */
-    private AtomicInteger numberOfUsers;
+    private final AtomicInteger numberOfUsers;
 
-    /**
-     * ConcurrentHashMap from String keys(UserNames) to User Objects,
-     * represents the data base of registered users in the server.
-     */
-    private ConcurrentHashMap<String, User> namesToRegisteredUsers;
-    /**
-     * ConcurrentHashMap from Integer keys(connection id) to User Objects,
-     * represents the data base of the users who are currently logged to the server.
-     */
-    private ConcurrentHashMap<Integer, User> namesToLoginUsers;
+    private final ConcurrentHashMap<String, User> namesToRegisteredUsers;
 
-    /**
-     * List Of Notifications represents all the PM and Posts messages that were sent to the Server so far..
-     */
-    private List<Notification> messageHistory;
+    private final ConcurrentHashMap<Integer, User> namesToLoginUsers;
 
-    /**
-     * ReadWriteLock to synchronized between sending a message event to login or logout event.
-     */
+    private final List<Notification> messageHistory;
+
     private ReadWriteLock sendOrLogLock;
 
-    /**
-     * Read Lock of the sendOrLogLock -> the send event is registered as a "read" event.
-     */
-    private Lock sendLock;
+    private final Lock sendLock;
 
-    /**
-     * Write Lock of the sendOrLogLock -> the login and logout events are registered as a "write" events.
-     */
-    private Lock logLock;
+    private final Lock logLock;
 
-    /**
-     * ReadWriteLock to synchronized between sending a message event to login or logout event.
-     */
     private ReadWriteLock registerOrUserListLock;
-    /**
-     * Read Lock of the registerOrUserListLock -> the UserList event is registered as a "read" event.
-     */
-    private Lock userListLock;
-    /**
-     * Write Lock of the registerOrUserListLock -> the Register event is registered as a "write" event.
-     */
-    private Lock registerLock;
 
-    /**
-     * Default Constructor
-     */
+    private final Lock userListLock;
+
+    private final Lock registerLock;
+
     public DataManager() {
         this.namesToRegisteredUsers = new ConcurrentHashMap<>();
         this.namesToLoginUsers = new ConcurrentHashMap<>();
@@ -86,23 +54,10 @@ public class DataManager {
         this.messageHistory = new Vector<>();
     }
 
-    /**
-     * Get the User Object That match the given name.
-     *
-     * @param name String represents the wanted UserName.
-     * @return User that match the given user name.
-     * If the user was not found in the data base --> returns null.
-     */
     public User getUserByName(String name) {
         return this.namesToRegisteredUsers.get(name);
     }
 
-    /**
-     * Creates and add a new user to the registered users data base.
-     *
-     * @param userName String represents the new user Name.
-     * @param password String represents the new user password.
-     */
     public void registerUser(String userName, String password) {
         //making sure no one try to register at the same time or use the UserList function at the same time.
         this.registerLock.lock();
@@ -113,23 +68,12 @@ public class DataManager {
         this.registerLock.unlock();
     }
 
-
-    /**
-     * add a certain user to the Logged in users data base.
-     *
-     * @param toLogin User Object to add to the logged in Users data base.
-     */
     public void loginUser(User toLogin) {
         this.logLock.lock();
         this.namesToLoginUsers.put(toLogin.getConnId(), toLogin);
         this.logLock.unlock();
     }
 
-    /**
-     * Removing the User who matches the given connection Id from the logged in data base.
-     *
-     * @param connId
-     */
     public void logoutUser(int connId) {
         this.logLock.lock();
         this.namesToLoginUsers.get(connId).logout();
@@ -137,34 +81,16 @@ public class DataManager {
         this.logLock.unlock();
     }
 
-    /**
-     * checks if there is any user logged in to the server.
-     *
-     * @return 'true' if the there are no users currently connected, 'else' otherwise.
-     */
     public boolean loginIsEmpty() {
         return this.namesToLoginUsers.isEmpty();
     }
 
-    /**
-     * Get a logged in User that matches the given connection id
-     *
-     * @param connId Integer represents the connection Id of the wanted user.
-     * @return Logged in User object that matches the given connection id.
-     * If there is no user that matches the given id --> return null.
-     */
+
     public User getConnectedUser(int connId) {
         return this.namesToLoginUsers.get(connId);
     }
 
-    /**
-     * Editing a given user to Follow or Unfollow a collection of users according to the given parameters.
-     *
-     * @param toCheck User Object to edit his Follow and Unfollow List.
-     * @param users   List of String represents UserNames  to follow or unfollow.
-     * @param follow  Boolean represents whether to follow or unfollow the users in the list.
-     * @return List of String represents all the users which was successfully followed or unfollowed
-     */
+
     public List<String> followOrUnfollow(User toCheck, List<String> users, boolean follow) {
         List<String> successful = new Vector<>();
         if (follow) {
@@ -199,42 +125,23 @@ public class DataManager {
         return successful;
     }
 
-    /**
-     * Save a Message that was sent by a certain user in the MessageHistory database
-     *
-     * @param toSave Notification Message represents the message to Save in the Message history database
-     */
+
     public void addToHistory(Notification toSave) {
         this.messageHistory.add(toSave);
     }
 
-    /**
-     * Send Notification message from to a certain client
-     *
-     * @param connections  Connections object that holds all the connections handler of the server.
-     * @param connectionID Integer represents the id of the recipient client in the connections object.
-     * @param toSend       Notification message to send.
-     */
+
     public void sendNotification(Connections<Message> connections, int connectionID, Notification toSend) {
         this.sendLock.lock();
         connections.send(connectionID, toSend);
         this.sendLock.unlock();
     }
 
-    /**
-     * Generate a unique new User number
-     *
-     * @return Integer represents the unique id of the current connecting user.
-     */
     private int generateUserNumber() {
         return this.numberOfUsers.getAndIncrement();
     }
 
-    /**
-     * get all the UserNames of the users that are currently registered to the server.
-     *
-     * @return List of Strings represents the names of all the current registered users.
-     */
+
     public List<String> returnRegisteredUsers(User connectedUser) {
         this.userListLock.lock();
         //getting the users and sorting them by their registration order

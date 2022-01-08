@@ -10,31 +10,16 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
 
-    /**
-     * DataManager Represents the shared data object.
-     */
     private final DataManager dataManager;
-    /**
-     * Boolean represents if the connection should terminate.
-     */
-    private boolean shouldTerminate;
-    /**
-     * Connections<Message> Represents the set of connections (connectionHandlers) currently connected.
-     */
+
+    private final boolean shouldTerminate;
+
     private Connections<Message> connections;
-    /**
-     * Represents a read and write locks. Login and Logout are write locks, Post and PM are read lock.
-     */
-    private ReadWriteLock logOrSendLock;
 
-    /**
-     * Represents a read and write locks. Register is write lock, Userlist read lock.
-     */
-    private ReadWriteLock registerOrUserListLock;
+    private final ReadWriteLock logOrSendLock;
 
-    /**
-     * Integer represents a personal connection ID of the current connectionHandler that holds this protocol.
-     */
+    private final ReadWriteLock registerOrUserListLock;
+
     private int connectionID;
 
     public BidiMessageProtocolImpl(DataManager dataManager, ReadWriteLock logOrSendLock, ReadWriteLock registerOrUserListLock) {
@@ -44,28 +29,17 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         this.shouldTerminate = false;
     }
 
-    /**
-     * Used to initiate the current client protocol with it's personal connection ID and the connections implementation
-     **/
     @Override
     public void start(int connectionId, Connections<Message> connections) {
         this.connectionID = connectionId;
         this.connections = connections;
     }
 
-    /**
-     * @return true if the connection should be terminated
-     */
     @Override
     public boolean shouldTerminate() {
         return this.shouldTerminate;
     }
 
-    /**
-     * Processes the given message.
-     *
-     * @param message Represents the message to be processed.
-     */
     @Override
     public void process(Message message) {
         final Message msg = message;
@@ -93,11 +67,6 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         currentProcess.run();
     }
 
-    /**
-     * Is called when user requests to register to the server. Register him unless alreardy been registed.
-     *
-     * @param registerMsg Represents a Register message to be processed.
-     */
     private void registerFunction(Register registerMsg) {
         this.registerOrUserListLock.writeLock().lock(); // Register is considered as a write event.
         if (this.dataManager.getUserByName(registerMsg.getUsername()) != null) {
@@ -110,11 +79,6 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         this.registerOrUserListLock.writeLock().unlock();
     }
 
-    /**
-     * Is called when user requests to login to the server. Logs in, unless already logged in, not registered or password doesn't match.
-     *
-     * @param loginMsg Represents a Login message to be processed.
-     */
     private void loginFunction(Login loginMsg) {
         this.logOrSendLock.writeLock().lock(); // Login is considered as a write event.
         User checkIfAlreadyConnected = this.dataManager.getConnectedUser(this.connectionID);
@@ -160,12 +124,6 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         this.logOrSendLock.writeLock().unlock();
     }
 
-    /**
-     * Is called when a user requests to follow or unfollow other users in the server. Follows/unfollows a user, unless
-     * already following/unfollowing him, or the user (the message sender) is not logged in.
-     *
-     * @param followMsg Represents a Follow message to be processed.
-     */
     private void followFunction(Follow followMsg) {
         User toCheck = this.dataManager.getConnectedUser(this.connectionID);
         if (toCheck == null) {
@@ -182,11 +140,6 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         }
     }
 
-    /**
-     * Is called when a user wants to post a public message. Posts it unless the user isn't logged in.
-     *
-     * @param postMsg Represents a Post message to be processed.
-     */
     private void postFunction(Post postMsg) {
         this.logOrSendLock.readLock().lock(); // Post is considered as a read event.
         User sender = this.dataManager.getConnectedUser(this.connectionID);
@@ -216,13 +169,6 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         this.logOrSendLock.readLock().unlock();
     }
 
-    /**
-     * Goes through the message to be posted and find tagged users .Belongs to "postFunction" function.
-     *
-     * @param postMsg Represents the Post message to be searched.
-     * @param sender  Represents the user that sent the Post message.
-     * @param users   Represents the list of users to send the Post message to.
-     */
     private void searchingForUsersInMessage(Post postMsg, User sender, List<User> users) {
         String[] contentWords = postMsg.getContent().split(" ");
         for (String contentWord : contentWords) {
@@ -241,12 +187,6 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         }
     }
 
-    /**
-     * Is called when a user wants to send a private message. Sends it unless the user isn't logged in or the recipient
-     * is not registered.
-     *
-     * @param pmMsg Represents a PM message to be processed.
-     */
     private void pmFunction(PM pmMsg) {
         this.logOrSendLock.readLock().lock(); // PM is considered as a read event.
         User sender = this.dataManager.getConnectedUser(this.connectionID);
@@ -269,11 +209,6 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         this.logOrSendLock.readLock().unlock();
     }
 
-    /**
-     * Is called when a user wants to get a list of all registered users. Gets it unless he isn't logged in.
-     *
-     * @param userListMsg Represents a Userlist message to be processed.
-     */
     private void userListFunction(UserList userListMsg) {
         this.registerOrUserListLock.readLock().lock(); // Userlist is considered as a read event.
         User user = this.dataManager.getConnectedUser(this.connectionID);
@@ -287,12 +222,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         this.registerOrUserListLock.readLock().unlock();
     }
 
-    /**
-     * Is called to receive data on a certain user (number of posts a user posted, number of followers,
-     * number of users the user is following). Gets the data unless the user (that asks for the data) isn't logged in.
-     *
-     * @param statMsg Represents a Stat message to be processed.
-     */
+
     private void statFunction(Stat statMsg) {
         User currentClient = this.dataManager.getConnectedUser(this.connectionID);
         User user = this.dataManager.getUserByName(statMsg.getUsername());

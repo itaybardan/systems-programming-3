@@ -2,29 +2,12 @@ package bgu.spl.net.api.bidi.Messages;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * Message Of type LOGIN of Client-To-Server communication, when a user wants to login to the server.
- */
+
 public class Login extends Message {
 
-    //region Fields
-    /**
-     * String represents the username who requested to login.
-     */
-    private String username;
+    private final String username;
+    private final String password;
 
-    /**
-     * String represents the password of the user who requested to login.
-     */
-    private String password;
-    //endregion Fields
-
-    /**
-     * Default Constructor.
-     *
-     * @param username String represents the username who requested to login.
-     * @param password String represents the password of the user who requested to login.
-     */
     public Login(String username, String password) {
         this.opcode = Opcode.LOGIN;
         this.username = username;
@@ -39,13 +22,7 @@ public class Login extends Message {
     public String getPassword() {
         return password;
     }
-    //endregion Getters
 
-    /**
-     * Convert all the data of this Login message to a byte array.
-     *
-     * @return Byte array represent this Login message in the right order according to the server protocol
-     */
     @Override
     public byte[] convertMessageToBytes() {
         //converting the opcode, username and password to bytes array.
