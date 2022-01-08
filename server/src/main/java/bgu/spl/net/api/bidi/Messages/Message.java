@@ -71,48 +71,25 @@ public abstract class Message {
         bytesArr[1] = (byte) (num & 0xFF);
         return bytesArr;
     }
-    //endregion Getters
 
-    //region Getters
     public Opcode getOpcode() {
         return opcode;
     }
 
-    /**
-     * Convert all the data of a certain message to a byte array.
-     *
-     * @return Byte array represent the current message in the right order according to the server protocol
-     */
     public abstract byte[] convertMessageToBytes();
 
-    /**
-     * Inserting array of bytes into the end of another Array bytes, from the given index.
-     *
-     * @param array  Bytes array to insert to the "output" array.
-     * @param output Bytes array that the "array" is inserting bytes to.
-     * @param index  Integer represent the current next free index to insert the new bytes from .
-     * @return Integer represent the new free index of the output array after the insertion
-     */
     protected int insertArray(byte[] array, byte[] output, int index) {
-        for (int i = 0; i < array.length; i++) {
-            output[index] = array[i];
+        for (byte b : array) {
+            output[index] = b;
             index++;
         }
         return index;
     }
 
-    /**
-     * Generate matching Ack Message to the Current Message according the Message data and server protocol.
-     *
-     * @return Ack message matching the data of this message according to the server protocol.
-     */
     public Ack generateAckMessage() {
         return new Ack(this.opcode, new byte[0][0]);
     }
 
-    /**
-     * Enum to represents the Opcode the defines Each message
-     */
     public enum Opcode {
         REGISTER,
         LOGIN,

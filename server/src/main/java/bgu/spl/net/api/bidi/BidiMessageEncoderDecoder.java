@@ -52,7 +52,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     @Override
     public Message decodeNextByte(byte nextByte) {
 
-        if(nextByte ==';'){
+        if (nextByte == ';') {
             return null;
         }
 
@@ -210,17 +210,15 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             this.aByte = nextByte;
             this.zeros++;
             return null;
-        }
-        else {
+        } else {
             insertByteToField2(nextByte);
             if (nextByte == '\0') {
-                    return generateFollowMessage();
-                }
-            else {
-                    return null;
-                }
+                return generateFollowMessage();
+            } else {
+                return null;
             }
         }
+    }
 
     private Message readingBlockMessage(byte nextByte) {
         // field1 = username
@@ -238,7 +236,6 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     }
 
 
-
     /**
      * Generating "Follow" message, by translating the arrays of bytes to strings.
      *
@@ -248,7 +245,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         Message output;
         checkReduceField2();
 
-        byte[] userByte = Arrays.copyOfRange(field2, 0, field2Index-1);
+        byte[] userByte = Arrays.copyOfRange(field2, 0, field2Index - 1);
         output = new Follow(this.aByte, new String(userByte, StandardCharsets.UTF_8));
         generalVariablesReset();
         return output;
@@ -257,7 +254,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     /**
      * Reading bytes and inserting them to the fields according to the specifications for "REGISTER" commands.
      *
-     * @param nextByte     Represents the next byte to be translated.
+     * @param nextByte Represents the next byte to be translated.
      * @return Message represents the decoded message, or null if not done reading the message.
      */
     private Message readingRegisterMessage(byte nextByte) {
@@ -266,10 +263,10 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             //The next byte going to be to the userName or passName
             if (nextByte == '\0') {
                 this.zeros++;
-                     if( this.zeros == 2) {
-                         checkReduceField1();
-                         return null;
-                     }
+                if (this.zeros == 2) {
+                    checkReduceField1();
+                    return null;
+                }
 
             }
             insertByteToField1(nextByte);
@@ -282,7 +279,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
                 //Creating the Register or Login Message
                 return generateRegisterMessage();
             }
-            insertByteToField2((byte) (nextByte- 48));
+            insertByteToField2((byte) (nextByte - 48));
             return null;
         }
     }
@@ -296,7 +293,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
 
     private Message generateRegisterMessage() { //TODO separate into register.
         Message output;
-        int separator=0;
+        int separator = 0;
         for (int i = 0; i < field1Index; i++) {
             if (field1[i] == '\0') {
                 separator = i;
@@ -305,12 +302,12 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
         }
 
         String username = new String(Arrays.copyOfRange(field1, 0, separator), StandardCharsets.UTF_8);
-        String password = new String(Arrays.copyOfRange(field1, separator+1, field1Index), StandardCharsets.UTF_8);
+        String password = new String(Arrays.copyOfRange(field1, separator + 1, field1Index), StandardCharsets.UTF_8);
 
         //init date
-        short day =(short) (field2[0]*10 + field2[1]);
-        short month =(short) (field2[3] * 10 + field2[4]);
-        short year =(short) (field2[6]*1000 + field2[7]*100 + field2[8]*10 + field2[9]);
+        short day = (short) (field2[0] * 10 + field2[1]);
+        short month = (short) (field2[3] * 10 + field2[4]);
+        short year = (short) (field2[6] * 1000 + field2[7] * 100 + field2[8] * 10 + field2[9]);
 
         output = new Register(username, password, year, month, day);
 
@@ -321,7 +318,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     /**
      * Reading bytes and inserting them to the fields according to the specifications for "Login" commands.
      *
-     * @param nextByte     Represents the next byte to be translated.
+     * @param nextByte Represents the next byte to be translated.
      * @return Message represents the decoded message, or null if not done reading the message.
      */
     private Message readingLoginMessage(byte nextByte) {
@@ -336,7 +333,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             }
             insertByteToField1(nextByte);
             return null;
-        } else if (this.zeros == 1){
+        } else if (this.zeros == 1) {
             //The next byte is going to be to the password.
             if (nextByte == '\0') {
                 checkReduceField2();
@@ -345,8 +342,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
             }
             insertByteToField2(nextByte);
             return null;
-        }
-        else if(nextByte != '\0'){
+        } else if (nextByte != '\0') {
             aByte = nextByte;
             return null;
         }
@@ -400,9 +396,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
     private byte[] extendArray(byte[] array) {
         int size = array.length;
         byte[] temp = new byte[size * 2];
-        for (int i = 0; i < size; i++) {
-            temp[i] = array[i];
-        }
+        System.arraycopy(array, 0, temp, 0, size);
         return temp;
     }
 
@@ -415,9 +409,7 @@ public class BidiMessageEncoderDecoder implements MessageEncoderDecoder<Message>
      */
     private byte[] reduceToGivenSize(byte[] toReduce, int realSize) {
         byte[] temp = new byte[realSize];
-        for (int i = 0; i < realSize; i++) {
-            temp[i] = toReduce[i];
-        }
+        System.arraycopy(toReduce, 0, temp, 0, realSize);
         return temp;
     }
 

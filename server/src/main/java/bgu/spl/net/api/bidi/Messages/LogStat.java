@@ -31,17 +31,17 @@ public class LogStat extends Message {
     /**
      * Generate matching Ack Message to this Follow Message Message according the Message data and server protocol.
      *
-     * @param users                   List of Strings represents the registered users that were found by the server
+     * @param users List of Strings represents the registered users that were found by the server
      * @return Ack message matching this Follow Message data of this message according to the server protocol.
      */
     public Ack generateAckMessage(List<User> users, short[] numberOfPosts) {
 
-        byte[][] elements = new byte[1+ 5 * users.size()][];
-        short numOfUsers =(short) numberOfPosts.length;
+        byte[][] elements = new byte[1 + 5 * users.size()][];
+        short numOfUsers = (short) numberOfPosts.length;
         elements[0] = shortToBytes(numOfUsers);
 
         int index = 1;
-        int i=0;
+        int i = 0;
 
         for (User user : users) {
             //converting each name in the list to bytes array and add it to elements.

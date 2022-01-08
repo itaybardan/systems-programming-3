@@ -2,7 +2,7 @@ package bgu.spl.net.api.bidi;
 
 import bgu.spl.net.api.bidi.Messages.Error;
 import bgu.spl.net.api.bidi.Messages.*;
-import bgu.spl.net.srv.bidi.DataManager;
+import bgu.spl.net.srv.DataBase;
 
 import java.util.List;
 import java.util.Vector;
@@ -11,20 +11,20 @@ import java.util.concurrent.locks.ReadWriteLock;
 public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
 
 
-    private final DataManager dataManager;
+    private final DataBase dataBase;
 
-    private boolean shouldTerminate;
+    private final boolean shouldTerminate;
 
     private Connections<Message> connections;
 
-    private ReadWriteLock logOrSendLock;
+    private final ReadWriteLock logOrSendLock;
 
-    private ReadWriteLock registerOrLogStatLock;
+    private final ReadWriteLock registerOrLogStatLock;
 
     private int connectionID;
 
-    public BidiMessageProtocolImpl(DataManager dataManager, ReadWriteLock logOrSendLock, ReadWriteLock registerOrLogStatLock) {
-        this.dataManager = dataManager;
+    public BidiMessageProtocolImpl(DataBase dataBase, ReadWriteLock logOrSendLock, ReadWriteLock registerOrLogStatLock) {
+        this.dataBase = dataBase;
         this.registerOrLogStatLock = registerOrLogStatLock;
         this.logOrSendLock = logOrSendLock;
         this.shouldTerminate = false;
@@ -85,11 +85,11 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
     private void registerFunction(Register registerMsg) {
         this.registerOrLogStatLock.writeLock().lock(); // Register is considered as a write event.
-        if (this.dataManager.getUserByName(registerMsg.getUsername()) != null) {
+        if (this.dataBase.getUserByName(registerMsg.getUsername()) != null) {
             //if the user is already registered - return error message.
             this.connections.send(this.connectionID, new Error(registerMsg.getOpcode()));
         } else {
-            this.dataManager.registerUser(registerMsg.getUsername(), registerMsg.getPassword(), registerMsg.getYear(), registerMsg.getMonth(), registerMsg.getDay());
+            this.dataBase.registerUser(registerMsg.getUsername(), registerMsg.getPassword(), registerMsg.getYear(), registerMsg.getMonth(), registerMsg.getDay());
             this.connections.send(this.connectionID, registerMsg.generateAckMessage());
         }
         this.registerOrLogStatLock.writeLock().unlock();
@@ -102,11 +102,11 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
     private void loginFunction(Login loginMsg) {
         this.logOrSendLock.writeLock().lock(); // Login is considered as a write event.
-        User checkIfAlreadyConnected = this.dataManager.getConnectedUser(this.connectionID);
+        User checkIfAlreadyConnected = this.dataBase.getConnectedUser(this.connectionID);
         if (checkIfAlreadyConnected != null || loginMsg.captcha == '0') {
             this.connections.send(this.connectionID, new Error(loginMsg.getOpcode()));
         } else {
-            User toCheck = this.dataManager.getUserByName(loginMsg.getUsername());
+            User toCheck = this.dataBase.getUserByName(loginMsg.getUsername());
             if ((toCheck == null) || (!toCheck.getPassword().equals(loginMsg.getPassword())) || (toCheck.isConnected())) {
                 //If the user is not registered \ password doesnt match \ is already connected --> return error message.
                 this.connections.send(this.connectionID, new Error(loginMsg.getOpcode()));
@@ -121,7 +121,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
                     }
                     //setting the connection value to true
                     toCheck.login(this.connectionID);
-                    this.dataManager.loginUser(toCheck);
+                    this.dataBase.loginUser(toCheck);
                 }
             }
         }
@@ -135,10 +135,10 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
     private void logoutFunction(Logout logoutMsg) {
         this.logOrSendLock.writeLock().lock(); // Logout is considered as a write event.
-        if (this.dataManager.loginIsEmpty()) {
+        if (this.dataBase.loginIsEmpty()) {
             this.connections.send(this.connectionID, new Error(logoutMsg.getOpcode()));
         } else {
-            this.dataManager.logoutUser(this.connectionID);
+            this.dataBase.logoutUser(this.connectionID);
             this.connections.send(this.connectionID, logoutMsg.generateAckMessage());
             this.connections.disconnect(this.connectionID);
         }
@@ -152,11 +152,11 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      * @param followMsg Represents a Follow message to be processed.
      */
     private void followFunction(Follow followMsg) {
-        User toCheck = this.dataManager.getConnectedUser(this.connectionID);
+        User toCheck = this.dataBase.getConnectedUser(this.connectionID);
         if (toCheck == null) {
             this.connections.send(this.connectionID, new Error(followMsg.getOpcode()));
         } else {
-            Boolean successful = this.dataManager.followOrUnfollow(toCheck, followMsg.getUser(), followMsg.isFollowing());
+            Boolean successful = this.dataBase.followOrUnfollow(toCheck, followMsg.getUser(), followMsg.isFollowing());
             if (!successful) {
                 //If no one of the requested users were followed \ unfollowed successfully --> send error.
                 this.connections.send(this.connectionID, new Error(followMsg.getOpcode()));
@@ -173,7 +173,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
     private void postFunction(Post postMsg) {
         this.logOrSendLock.readLock().lock(); // Post is considered as a read event.
-        User sender = this.dataManager.getConnectedUser(this.connectionID);
+        User sender = this.dataBase.getConnectedUser(this.connectionID);
         if (sender == null) {
             //the user is not logged in --> send error message
             this.connections.send(this.connectionID, new Error(postMsg.getOpcode()));
@@ -188,13 +188,13 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
                 //send notification to each user
                 if (currentUser.isConnected()) {
                     //if the user is connected --> send the notification
-                    this.dataManager.sendNotification(this.connections, currentUser.getConnId(), toSend);
+                    this.dataBase.sendNotification(this.connections, currentUser.getConnId(), toSend);
                 } else {
                     //else --> send the message to the waiting queue of that user.
                     currentUser.getWaitingMessages().add(toSend);
                 }
             }
-            this.dataManager.addToHistory(toSend);
+            this.dataBase.addToHistory(toSend);
             this.connections.send(this.connectionID, postMsg.generateAckMessage());
         }
         this.logOrSendLock.readLock().unlock();
@@ -213,7 +213,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
             if (contentWord.contains("@")) {
                 //need to search the tagged user
                 String currentUserName = contentWord.substring(contentWord.indexOf("@") + 1);
-                User currentUser = this.dataManager.getUserByName(currentUserName);
+                User currentUser = this.dataBase.getUserByName(currentUserName);
                 if ((currentUser != null) && (!users.contains(currentUser))) {
                     //only if the Current tagged user is registered
                     if (!sender.getFollowers().contains(currentUser)) {
@@ -233,8 +233,8 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
     private void pmFunction(PM pmMsg) {
         this.logOrSendLock.readLock().lock(); // PM is considered as a read event.
-        User sender = this.dataManager.getConnectedUser(this.connectionID);
-        User recipient = this.dataManager.getUserByName(pmMsg.getUserName());
+        User sender = this.dataBase.getConnectedUser(this.connectionID);
+        User recipient = this.dataBase.getUserByName(pmMsg.getUserName());
         if ((sender == null) || (recipient == null) || sender.getBlockedBy().contains(recipient)) {
             //the user is not logged in or recipient is not registered --> send error message
             this.connections.send(this.connectionID, new Error(pmMsg.getOpcode()));
@@ -243,11 +243,11 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         } else {
             Notification toSend = new Notification((byte) 0, sender.getUserName(), pmMsg.getFilteredContent());
             if (recipient.isConnected()) {
-                this.dataManager.sendNotification(this.connections, recipient.getConnId(), toSend);
+                this.dataBase.sendNotification(this.connections, recipient.getConnId(), toSend);
             } else {
                 recipient.getWaitingMessages().add(toSend);
             }
-            this.dataManager.addToHistory(toSend);
+            this.dataBase.addToHistory(toSend);
         }
         this.connections.send(this.connectionID, pmMsg.generateAckMessage());
         this.logOrSendLock.readLock().unlock();
@@ -260,15 +260,15 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
     private void logstatFunction(LogStat logstatMsg) {
         this.registerOrLogStatLock.readLock().lock(); // Logstat is considered as a read event.
-        User currentUser = this.dataManager.getConnectedUser(this.connectionID);
+        User currentUser = this.dataBase.getConnectedUser(this.connectionID);
         if (currentUser == null) {
             this.connections.send(this.connectionID, new Error(logstatMsg.getOpcode()));
         } else {
-            List<User> registeredUsers = this.dataManager.returnRegisteredUsers(currentUser);
+            List<User> registeredUsers = this.dataBase.returnRegisteredUsers(currentUser);
             short[] numOfPosts = new short[registeredUsers.size()];
-            int i=0;
-            for (User user: registeredUsers) {
-                numOfPosts[i] = this.dataManager.returnNumberOfPosts(user.getUserName());
+            int i = 0;
+            for (User user : registeredUsers) {
+                numOfPosts[i] = this.dataBase.returnNumberOfPosts(user.getUserName());
                 i++;
             }
 
@@ -284,32 +284,32 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      * @param statMsg Represents a Stat message to be processed.
      */
     private void statFunction(Stat statMsg) {
-        User currentClient = this.dataManager.getConnectedUser(this.connectionID);
-        if (currentClient != null){
+        User currentClient = this.dataBase.getConnectedUser(this.connectionID);
+        if (currentClient != null) {
 
             String[] users = statMsg.getUsers();
             int size = users.length;
             short[] ages = new short[size];
-            short[]numberOfPosts = new short[size];
-            short[]followers = new short[size];
-            short[]following= new short[size];
+            short[] numberOfPosts = new short[size];
+            short[] followers = new short[size];
+            short[] following = new short[size];
 
-            int legalSize=0;
-            for(int i=0;i < size; i++) {
-                User user = this.dataManager.getUserByName(users[i]);
-                if(user == null) {
+            int legalSize = 0;
+            for (int i = 0; i < size; i++) {
+                User user = this.dataBase.getUserByName(users[i]);
+                if (user == null) {
                     this.connections.send(this.connectionID, new Error(statMsg.getOpcode()));
                     return;
                 }
-                if(!currentClient.isBlockedBy(user)) {
+                if (!currentClient.isBlockedBy(user)) {
                     ages[legalSize] = user.getAge();
-                    numberOfPosts[legalSize] = this.dataManager.returnNumberOfPosts(user.getUserName());
+                    numberOfPosts[legalSize] = this.dataBase.returnNumberOfPosts(user.getUserName());
                     followers[legalSize] = user.getFollowersAmm();
                     following[legalSize] = user.getFollowingAmm();
                     legalSize++;
                 }
             }
-            this.connections.send(this.connectionID, statMsg.generateAckMessage(legalSize, ages,numberOfPosts, followers, following));
+            this.connections.send(this.connectionID, statMsg.generateAckMessage(legalSize, ages, numberOfPosts, followers, following));
 
         } else {
             //if the requesting user is not logged in OR if the user in the request does not exist --> send error
@@ -317,6 +317,7 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
         }
 
     }
+
     /**
      * Is called when a user blocks all connection from another user.
      * Sends error if user is not registered.
@@ -325,8 +326,8 @@ public class BidiMessageProtocolImpl implements BidiMessagingProtocol<Message> {
      */
 
     private void blockFunction(Block blockMsg) {
-        User currentClient = this.dataManager.getConnectedUser(this.connectionID);
-        User user = this.dataManager.getUserByName(blockMsg.getUsername());
+        User currentClient = this.dataBase.getConnectedUser(this.connectionID);
+        User user = this.dataBase.getUserByName(blockMsg.getUsername());
         if ((user == null) || (currentClient == null)) {
             //if the requesting user is not logged in OR if the user in the request does not exist --> send error
             this.connections.send(this.connectionID, new Error(blockMsg.getOpcode()));

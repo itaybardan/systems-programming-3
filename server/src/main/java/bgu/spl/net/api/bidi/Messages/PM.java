@@ -2,27 +2,14 @@ package bgu.spl.net.api.bidi.Messages;
 
 import java.nio.charset.StandardCharsets;
 
-/**
- * Message Of type PM of Client-To-Server communication, when a user wants to send a private message to other user.
- */
+
 public class PM extends Message {
     public static String[] forbiddenWords = new String[]{"fuck", "dinner"};
-    /**
-     * String represents the username that needs to get this message.
-     */
-    private String userName;
 
-    /**
-     * String represents the Content of this message.
-     */
-    private String content;
+    private final String userName;
 
-    /**
-     * Default constructor.
-     *
-     * @param userName String represents the username that needs to get this message.
-     * @param content  String represents the Content of this message.
-     */
+    private final String content;
+
     public PM(String userName, String content) {
         this.opcode = Opcode.PM;
         this.userName = userName;
@@ -46,13 +33,6 @@ public class PM extends Message {
         return content;
     }
 
-    //endregion Getters
-
-    /**
-     * Convert all the data of this PM message to a byte array.
-     *
-     * @return Byte array represent this PM message in the right order according to the server protocol
-     */
     @Override
     public byte[] convertMessageToBytes() {
         //converting the opcode,  username and content to bytes arrays.

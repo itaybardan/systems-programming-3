@@ -1,4 +1,4 @@
-package bgu.spl.net.srv.bidi;
+package bgu.spl.net.srv;
 
 import bgu.spl.net.api.bidi.Connections;
 import bgu.spl.net.api.bidi.Messages.Message;
@@ -6,80 +6,38 @@ import bgu.spl.net.api.bidi.Messages.Notification;
 import bgu.spl.net.api.bidi.User;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-/**
- * DataBase shared between all the Connections for the BGSServer.
- * holds all the information of users that are registered or logged in to the server.
- * in charge of data manipulations on the database
- */
-public class DataManager {
-
-    /**
-     * Atomic Integer represent the number of users that are currently registered to the Server.
-     */
-    private AtomicInteger numberOfUsers;
+public class DataBase {
+    private final AtomicInteger numberOfUsers;
     private final short YEAR;
     private final short MONTH;
     private final short DAY;
 
-    /**
-     * ConcurrentHashMap from String keys(UserNames) to User Objects,
-     * represents the data base of registered users in the server.
-     */
-    private ConcurrentHashMap<String, User> namesToRegisteredUsers;
-    /**
-     * ConcurrentHashMap from Integer keys(connection id) to User Objects,
-     * represents the data base of the users who are currently logged to the server.
-     */
-    private ConcurrentHashMap<Integer, User> namesToLoginUsers;
+    private final ConcurrentHashMap<String, User> namesToRegisteredUsers;
 
-    /**
-     * List Of Notifications represents all the PM and Posts messages that were sent to the Server so far..
-     */
-    private List<Notification> messageHistory;
+    private final ConcurrentHashMap<Integer, User> namesToLoginUsers;
 
-    /**
-     * ReadWriteLock to synchronized between sending a message event to login or logout event.
-     */
-    private ReadWriteLock sendOrLogLock;
+    private final List<Notification> messageHistory;
+    private final Lock sendLock;
+    private final Lock logLock;
+    private final Lock userListLock;
+    private final Lock registerLock;
+    private final ReadWriteLock sendOrLogLock;
+    private final ReadWriteLock registerOrUserListLock;
 
-    /**
-     * Read Lock of the sendOrLogLock -> the send event is registered as a "read" event.
-     */
-    private Lock sendLock;
-
-    /**
-     * Write Lock of the sendOrLogLock -> the login and logout events are registered as a "write" events.
-     */
-    private Lock logLock;
-
-    /**
-     * ReadWriteLock to synchronized between sending a message event to login or logout event.
-     */
-    private ReadWriteLock registerOrUserListLock;
-    /**
-     * Read Lock of the registerOrUserListLock -> the UserList event is registered as a "read" event.
-     */
-    private Lock userListLock;
-    /**
-     * Write Lock of the registerOrUserListLock -> the Register event is registered as a "write" event.
-     */
-    private Lock registerLock;
-
-    /**
-     * Default Constructor
-     */
-    public DataManager() {
+    public DataBase() {
         LocalDateTime now = LocalDateTime.now();
-        this.YEAR =(short) now.getYear();
-        this.MONTH =(short) now.getMonth().getValue();
-        this.DAY =(short) now.getDayOfMonth();
+        this.YEAR = (short) now.getYear();
+        this.MONTH = (short) now.getMonth().getValue();
+        this.DAY = (short) now.getDayOfMonth();
         this.namesToRegisteredUsers = new ConcurrentHashMap<>();
         this.namesToLoginUsers = new ConcurrentHashMap<>();
         this.sendOrLogLock = new ReentrantReadWriteLock(true);
@@ -90,56 +48,31 @@ public class DataManager {
         this.registerLock = this.registerOrUserListLock.writeLock();
         this.numberOfUsers = new AtomicInteger(0);
         this.messageHistory = new Vector<>();
-
     }
 
-    /**
-     * Get the User Object That match the given name.
-     *
-     * @param name String represents the wanted UserName.
-     * @return User that match the given user name.
-     * If the user was not found in the data base --> returns null.
-     */
     public User getUserByName(String name) {
         return this.namesToRegisteredUsers.get(name);
     }
 
-    /**
-     * Creates and add a new user to the registered users data base.
-     *
-     * @param userName String represents the new user Name.
-     * @param password String represents the new user password.
-     */
     public void registerUser(String userName, String password, short birthYear, short birthMonth, short birthDay) {
         this.registerLock.lock();
         int userNumber = this.generateUserNumber();
 
         //create new user with the given details and add it to the data base.
         short userAge = (short) (this.YEAR - birthYear);
-        if(birthMonth > this.MONTH || (birthMonth== this.MONTH && birthDay > this.DAY)) userAge--;
+        if (birthMonth > this.MONTH || (birthMonth == this.MONTH && birthDay > this.DAY)) userAge--;
         User newUser = new User(userName, password, userNumber, userAge);
 
         this.namesToRegisteredUsers.put(userName, newUser);
         this.registerLock.unlock();
     }
 
-
-    /**
-     * add a certain user to the Logged in users data base.
-     *
-     * @param toLogin User Object to add to the logged in Users data base.
-     */
     public void loginUser(User toLogin) {
         this.logLock.lock();
         this.namesToLoginUsers.put(toLogin.getConnId(), toLogin);
         this.logLock.unlock();
     }
 
-    /**
-     * Removing the User who matches the given connection Id from the logged in data base.
-     *
-     * @param connId
-     */
     public void logoutUser(int connId) {
         this.logLock.lock();
         this.namesToLoginUsers.get(connId).logout();
@@ -147,57 +80,36 @@ public class DataManager {
         this.logLock.unlock();
     }
 
-    /**
-     * checks if there is any user logged in to the server.
-     *
-     * @return 'true' if the there are no users currently connected, 'else' otherwise.
-     */
     public boolean loginIsEmpty() {
         return this.namesToLoginUsers.isEmpty();
     }
 
-    /**
-     * Get a logged in User that matches the given connection id
-     *
-     * @param connId Integer represents the connection Id of the wanted user.
-     * @return Logged in User object that matches the given connection id.
-     * If there is no user that matches the given id --> return null.
-     */
     public User getConnectedUser(int connId) {
         return this.namesToLoginUsers.get(connId);
     }
 
-    /**
-     * Will follow/unfollow the requested user if the request, returns boolean value of whether the procedure was successful.
-     *
-     * @param toCheck User Object to edit his Follow and Unfollow List.
-     * @param user   List of String represents UserNames  to follow or unfollow.
-     * @param follow  Boolean represents whether to follow or unfollow the users in the list.
-     * @return whether this user exists | the follow/unfollow method could be resolved successfully.
-     */
     public Boolean followOrUnfollow(User toCheck, String user, boolean follow) {
         User current = this.namesToRegisteredUsers.get(user);
-        if(current == null) return false;
+        if (current == null) return false;
 
         if (follow) {
 
-                    //if the wanted user is registered
-                    //updated the toCheck User following database
-                    if (!toCheck.getFollowing().contains(current) && !toCheck.getBlockedBy().contains(current)) {
-                        toCheck.addFollowing(current);
-                        current.addFollower(toCheck);
-                        return true;
-                    }
+            //if the wanted user is registered
+            //updated the toCheck User following database
+            if (!toCheck.getFollowing().contains(current) && !toCheck.getBlockedBy().contains(current)) {
+                toCheck.addFollowing(current);
+                current.addFollower(toCheck);
+                return true;
+            }
 
-        }
-        else {
+        } else {
             //unfollow
 
-                    if (toCheck.getFollowing().contains(current)) {
-                        toCheck.removeFollowing(current);
-                        current.removeFollower(toCheck);
-                        return true;
-                    }
+            if (toCheck.getFollowing().contains(current)) {
+                toCheck.removeFollowing(current);
+                current.removeFollower(toCheck);
+                return true;
+            }
 
         }
         return false;

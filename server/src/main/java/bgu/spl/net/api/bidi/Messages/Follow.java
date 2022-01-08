@@ -1,8 +1,6 @@
 package bgu.spl.net.api.bidi.Messages;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Vector;
 
 /**
  * Message Of type FOLLOW of Client-To-Server communication, when a user wants to follow or unfollow certain users
@@ -12,19 +10,18 @@ public class Follow extends Message {
     /**
      * Boolean represents whether the Request is for following or unfollowing
      */
-    private boolean isFollowing;
+    private final boolean isFollowing;
 
     /**
      * List of String of users that the client want to follow or unfollow
      */
-    private String user;
+    private final String user;
 
     /**
      * Default constructor
      *
-     * @param isFollowing   Byte represents whether the client wants to follow or unfollow.
-
-     * @param user         List of String represents the users the client wants to follow or unfollow.
+     * @param isFollowing Byte represents whether the client wants to follow or unfollow.
+     * @param user        List of String represents the users the client wants to follow or unfollow.
      */
     public Follow(byte isFollowing, String user) {
         this.opcode = Opcode.FOLLOW;
@@ -65,8 +62,7 @@ public class Follow extends Message {
         byte[] userInByte = user.getBytes(StandardCharsets.UTF_8);
         int userInByteLength = userInByte.length;
 
-        byte[] output = new byte[opcode.length + isFollowingBytes.length +
-                + userInByteLength];
+        byte[] output = new byte[opcode.length + isFollowingBytes.length + userInByteLength];
         int index = 0;
 
         //inserting all the data to single byte array to return.
@@ -81,7 +77,6 @@ public class Follow extends Message {
     /**
      * Generate matching Ack Message to this Follow Message Message according the Message data and server protocol.
      *
-
      * @param user String represents the user that was found by the server
      * @return Ack message matching this Follow Message data of this message according to the server protocol.
      */
@@ -89,15 +84,13 @@ public class Follow extends Message {
 
         byte[][] elements = new byte[3][];
         elements[0] = new byte[2];
-        if(isFollowing) elements[0][0]='0';
-        else elements[0][0]='1';
-        elements[0][1]=' ';
+        if (isFollowing) elements[0][0] = '0';
+        else elements[0][0] = '1';
+        elements[0][1] = ' ';
         byte[] toInsert = user.getBytes(StandardCharsets.UTF_8);
         elements[1] = toInsert;
         byte[] separator = {'\0'};
         elements[2] = separator;
-
-        Ack output = new Ack(this.opcode, elements);
-        return output;
+        return new Ack(this.opcode, elements);
     }
 }
