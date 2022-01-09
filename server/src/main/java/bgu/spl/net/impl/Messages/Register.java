@@ -1,18 +1,35 @@
-package bgu.spl.net.api.bidi.Messages;
+package bgu.spl.net.impl.Messages;
 
 import java.nio.charset.StandardCharsets;
 
+public class Register extends Message {
 
-public class Login extends Message {
-    public final char captcha;
     private final String username;
-    private final String password;
 
-    public Login(String username, String password, char captcha) {
-        this.opcode = Opcode.LOGIN;
+    private final String password;
+    private final short year;
+    private final short month;
+    private final short day;
+
+    public Register(String username, String password, short year, short month, short day) {
+        this.opcode = Opcode.REGISTER;
         this.username = username;
         this.password = password;
-        this.captcha = captcha;
+        this.year = year;
+        this.month = month;
+        this.day = day;
+    }
+
+    public short getYear() {
+        return year;
+    }
+
+    public short getMonth() {
+        return month;
+    }
+
+    public short getDay() {
+        return day;
     }
 
     public String getUsername() {
@@ -23,14 +40,20 @@ public class Login extends Message {
         return password;
     }
 
-
+    /**
+     * Convert all the data of this Register message to a byte array.
+     *
+     * @return Byte array represent this Register message in the right order according to the server protocol
+     */
     @Override
     public byte[] convertMessageToBytes() {
+        //converting the opcode, username and password to bytes arrays.
         byte[] opcode = this.shortToBytes(this.opcode.getCode());
         byte[] usernameBytes = this.username.getBytes(StandardCharsets.UTF_8);
         byte[] passwordBytes = this.password.getBytes(StandardCharsets.UTF_8);
         byte[] output = new byte[opcode.length + usernameBytes.length + passwordBytes.length + 2];
         int index = 0;
+        //inserting the data of this message to a single byte array to return.
         index = insertArray(opcode, output, index);
         index = insertArray(usernameBytes, output, index);
         output[index] = '\0';
@@ -39,5 +62,4 @@ public class Login extends Message {
         output[index] = '\0';
         return output;
     }
-
 }

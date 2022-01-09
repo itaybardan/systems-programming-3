@@ -1,9 +1,8 @@
-package bgu.spl.net.srv;
+package bgu.spl.net.impl;
 
 import bgu.spl.net.api.bidi.Connections;
-import bgu.spl.net.api.bidi.Messages.Message;
-import bgu.spl.net.api.bidi.Messages.Notification;
-import bgu.spl.net.api.bidi.User;
+import bgu.spl.net.impl.Messages.Message;
+import bgu.spl.net.impl.Messages.Notification;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -58,7 +57,7 @@ public class DataBase {
         this.registerLock.lock();
         int userNumber = this.generateUserNumber();
 
-        //create new user with the given details and add it to the data base.
+        //create new user with the given details and add it to the database.
         short userAge = (short) (this.YEAR - birthYear);
         if (birthMonth > this.MONTH || (birthMonth == this.MONTH && birthDay > this.DAY)) userAge--;
         User newUser = new User(userName, password, userNumber, userAge);
@@ -91,66 +90,37 @@ public class DataBase {
     public Boolean followOrUnfollow(User toCheck, String user, boolean follow) {
         User current = this.namesToRegisteredUsers.get(user);
         if (current == null) return false;
-
         if (follow) {
-
-            //if the wanted user is registered
-            //updated the toCheck User following database
-            if (!toCheck.getFollowing().contains(current) && !toCheck.getBlockedBy().contains(current)) {
+           if (!toCheck.getFollowing().contains(current) && !toCheck.getBlockedBy().contains(current)) {
                 toCheck.addFollowing(current);
                 current.addFollower(toCheck);
                 return true;
             }
 
-        } else {
-            //unfollow
-
+        } else {//unfollow
             if (toCheck.getFollowing().contains(current)) {
                 toCheck.removeFollowing(current);
                 current.removeFollower(toCheck);
                 return true;
             }
-
         }
         return false;
     }
 
-    /**
-     * Save a Message that was sent by a certain user in the MessageHistory database
-     *
-     * @param toSave Notification Message represents the message to Save in the Message history database
-     */
     public void addToHistory(Notification toSave) {
         this.messageHistory.add(toSave);
     }
 
-    /**
-     * Send Notification message from to a certain client
-     *
-     * @param connections  Connections object that holds all the connections handler of the server.
-     * @param connectionID Integer represents the id of the recipient client in the connections object.
-     * @param toSend       Notification message to send.
-     */
     public void sendNotification(Connections<Message> connections, int connectionID, Notification toSend) {
         this.sendLock.lock();
         connections.send(connectionID, toSend);
         this.sendLock.unlock();
     }
 
-    /**
-     * Generate a unique new User number
-     *
-     * @return Integer represents the unique id of the current connecting user.
-     */
     private int generateUserNumber() {
         return this.numberOfUsers.getAndIncrement();
     }
 
-    /**
-     * get all the UserNames of the users that are currently registered to the server.
-     *
-     * @return List of Strings represents the names of all the current registered users.
-     */
     public List<User> returnRegisteredUsers(User connectedUser) {
         this.userListLock.lock();
         //getting the users and sorting them by their registration order
@@ -167,12 +137,6 @@ public class DataBase {
         return registeredUsers;
     }
 
-    /**
-     * calculates the number of posts of a certain user.
-     *
-     * @param postingUser String represents the user that the function needs to calculate his post number in the server.
-     * @return Short number represents the amount of posts the posting user posted.
-     */
     public short returnNumberOfPosts(String postingUser) {
         short output = 0;
         for (Notification msg : messageHistory) {

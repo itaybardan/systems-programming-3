@@ -1,7 +1,5 @@
-package bgu.spl.net.api.bidi.Messages;
-
-import bgu.spl.net.api.bidi.User;
-
+package bgu.spl.net.impl.Messages;
+import bgu.spl.net.impl.User;
 import java.util.List;
 
 /**

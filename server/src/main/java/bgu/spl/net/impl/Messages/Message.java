@@ -1,4 +1,4 @@
-package bgu.spl.net.api.bidi.Messages;
+package bgu.spl.net.impl.Messages;
 
 /**
  * Abstract Class represents a Message that is send from the server to the client or from the client to the server.

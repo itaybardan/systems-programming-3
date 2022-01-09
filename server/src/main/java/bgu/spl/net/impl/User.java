@@ -1,6 +1,6 @@
-package bgu.spl.net.api.bidi;
+package bgu.spl.net.impl;
 
-import bgu.spl.net.api.bidi.Messages.Message;
+import bgu.spl.net.impl.Messages.Message;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -22,13 +22,6 @@ public class User implements Comparable<User> {
     private final short age;
     private volatile boolean isConnected;
 
-    /**
-     * Default Constructor.
-     *
-     * @param userName String represents this User Name.
-     * @param password String represents this user Password.
-     * @param userNum  Integer represents the unique id of this user.
-     */
     public User(String userName, String password, int userNum, short age) {
         this.connId = DISCONNECTED_ID;
         this.userName = userName;
@@ -59,11 +52,6 @@ public class User implements Comparable<User> {
         return age;
     }
 
-    /**
-     * Return a copy of the current users this user is following
-     *
-     * @return Set Of User Objects that this user is following.
-     */
     public Set<User> getFollowing() {
         return new HashSet<>(following);
     }
@@ -76,11 +64,6 @@ public class User implements Comparable<User> {
         return (short) followers.size();
     }
 
-    /**
-     * Return a copy of the current users that follows this user.
-     *
-     * @return Set Of User Objects that follows this user.
-     */
     public Set<User> getFollowers() {
         return new HashSet<>(followers);
     }
@@ -110,8 +93,6 @@ public class User implements Comparable<User> {
     public synchronized void removeFollowing(User toRemove) {
         this.following.remove(toRemove);
     }
-
-    //endregion Getters
 
     public Set<User> getBlockedBy() {
         return this.blockedBy;

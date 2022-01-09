@@ -24,9 +24,13 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         this.protocol = protocol;
     }
 
+    public void start(int connectionID, Connections<T> connections) {
+        this.protocol.start(connectionID, connections);
+    }
+
     @Override
     public void run() {
-        try (Socket sock = this.sock) { //just for automatic closing
+        try (Socket sock = this.sock) {
             int read;
 
             in = new BufferedInputStream(sock.getInputStream());
@@ -44,11 +48,6 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     }
 
-    /**
-     * Sends the given message to the client that is connected to this Connections handler
-     *
-     * @param msg T object to send back to the client.
-     */
     @Override
     public void send(T msg) {
         try {
@@ -65,13 +64,5 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         sock.close();
     }
 
-    /**
-     * initialising the protocol of this connection Handler with the connection object and this ConnectionHandler unique id.
-     *
-     * @param connectionID Integer represents this ConnectionHandler unique id in the connections objects.
-     * @param connections  Connections Object to reference to the protocol of this ConnectionHandler.
-     */
-    public void start(int connectionID, Connections<T> connections) {
-        this.protocol.start(connectionID, connections);
-    }
+
 }

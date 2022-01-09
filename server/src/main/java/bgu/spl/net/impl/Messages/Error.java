@@ -1,4 +1,4 @@
-package bgu.spl.net.api.bidi.Messages;
+package bgu.spl.net.impl.Messages;
 
 public class Error extends Message {
 
