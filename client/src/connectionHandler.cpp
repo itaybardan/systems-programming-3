@@ -22,7 +22,7 @@ bool ConnectionHandler::connect() {
     std::cout << "Starting connect to " 
         << host_ << ":" << port_ << std::endl;
     try {
-		tcp::endpoint endpoint(boost::asio::ip::address::from_string(host_), port_); // the server endpoint
+		tcp::endpoint endpoint(boost::asio::ip::address::from_string(host_), port_);
 		boost::system::error_code error;
 		socket_.connect(endpoint, error);
 		if (error)
@@ -94,7 +94,7 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
     return true;
 }
 
-bool ConnectionHandler::sendLine(std::string& line) { //TODO CHANGE JAVA CODE TO ACCOMMODATE THE DELIMITER (';') CORRECTLY
+bool ConnectionHandler::sendLine(std::string& line) {
     return sendFrameAscii(line, '\0');
 
 }
@@ -129,11 +129,11 @@ bool ConnectionHandler::sendFrameAscii(std::string& frame, char delimiter) {
 
 
     shortToBytes(opcode, opCodeToByte);
-    bool result1= sendBytes(opCodeToByte, 2); //sending opcode
+    bool result1= sendBytes(opCodeToByte, 2);
     delete[] opCodeToByte;
     if(!result1) return false;
 
-    frame = frame.substr(frame.find_first_of(" ") + 1); //we removed the code type from the line
+    frame = frame.substr(frame.find_first_of(" ") + 1);
     encodeMessage(frame, opcode);
 
 
@@ -181,12 +181,6 @@ void ConnectionHandler::close() {
     }
 }
 
-
-//region translating message from server functions
-/**
- * Translating the incoming message from the server to string
- * @return          String representation of the message received by the server
- */
 bool ConnectionHandler::getLine(std::string &output) {
 
     char ch;
@@ -235,7 +229,7 @@ string ConnectionHandler::getMessageAck(string &output, char &ch, vector<char> &
         return output;
     }
     else{
-     //for Register, Login, Logout, Post, Pm
+     //for Register, Login, Logout, Post or Pm
     return output;
     }
 }
@@ -317,17 +311,17 @@ string ConnectionHandler::getNotifyAck(string &output, char &ch) {
     return output;
 }
 
-string ConnectionHandler::getErrorAck(string &output, char &ch, vector<char> &message, char *ch_tempArray,
+string ConnectionHandler::getErrorAck(string &output, char &ch, vector<char> &message, char *temp,
                                       short opcode) {
     output.append("ERROR ");
     for(int i = 0; i < 2; i++){
         getBytes(&ch, 1);
         message.push_back(ch);
     }
-    //getting resolved opcode
-    ch_tempArray[0] = message[2];
-    ch_tempArray[1] = message[3];
-    opcode = bytesToShort(ch_tempArray);
+
+    temp[0] = message[2];
+    temp[1] = message[3];
+    opcode = bytesToShort(temp);
     output.append(std::to_string(opcode));
     return output;
 }

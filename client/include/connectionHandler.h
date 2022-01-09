@@ -62,7 +62,7 @@ public:
 
     std::string getNotifyAck(std::string &output, char &ch);
 
-    std::string getErrorAck(std::string &output, char &ch, std::vector<char> &message, char *ch_tempArray, short opcode);
+    std::string getErrorAck(std::string &output, char &ch, std::vector<char> &message, char *temp, short opcode);
 
     void shortToBytes(short num, char *bytesArr);
 
